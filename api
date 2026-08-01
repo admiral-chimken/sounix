@@ -1,0 +1,116 @@
+import shutil
+import subprocess
+from pathlib import Path
+
+
+def scan_with_clamav(target="~"):
+    """Scan a file or directory using ClamAV."""
+
+    # Convert ~ into /home/william and make the path absolute
+    scan_path = Path(target).expanduser().resolve()
+
+    if not scan_path.exists():
+        return f"Sounix: I cannot find: {scan_path}"
+
+    # Make sure ClamAV is installed
+    if shutil.which("clamscan") is None:
+        return (
+            "Sounix: ClamAV is not installed.\n"
+            "Install it with: sudo pacman -S clamav"
+        )
+
+    print(f"Sounix: Scanning {scan_path} with ClamAV...")
+
+    command = ["clamscan", "--infected"]
+
+    if scan_path.is_dir():
+        command.append("--recursive")
+
+    command.append(str(scan_path))
+
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=600,
+            check=False,
+        )
+
+    except subprocess.TimeoutExpired:
+        return "Sounix: The scan took longer than 10 minutes and was stopped."
+
+    except OSError as error:
+        return f"Sounix: I could not start ClamAV: {error}"
+
+    output = result.stdout.strip()
+    error_output = result.stderr.strip()
+
+    # ClamAV return codes:
+    # 0 = no virus found
+    # 1 = virus found
+    # 2 = scan error
+    if result.returncode == 0:
+        return (
+            "Sounix: Scan completed.\n"
+            "No threats were found.\n\n"
+            f"{output}"
+        )
+
+    if result.returncode == 1:
+        return (
+            "Sounix: WARNING — ClamAV detected a possible threat.\n"
+            "Do not open or run the infected file.\n\n"
+            f"{output}"
+        )
+
+    details = error_output or output or "No additional details were provided."
+
+    return (
+        "Sounix: ClamAV could not complete the scan.\n"
+        f"Details:\n{details}"
+    )
+
+
+def respond(message):
+    original_message = message.strip()
+    lower_message = original_message.lower()
+
+    if lower_message in {"hello", "hi", "hey"}:
+        return "Hello! Sounix is online."
+
+    elif lower_message == "status":
+        clamav_status = (
+            "available"
+            if shutil.which("clamscan")
+            else "not installed"
+        )
+
+        return (
+            "Sounix status:\n"
+            "Core system: online\n"
+            f"ClamAV: {clamav_status}"
+        )
+
+    elif lower_message == "scan":
+        # Scan William's home directory
+        return scan_with_clamav("~")
+
+    elif lower_message.startswith("scan "):
+        # Example: scan ~/Downloads
+        target = original_message[5:].strip()
+        return scan_with_clamav(target)
+
+    elif lower_message == "help":
+        return (
+            "Commands:\n"
+            "  hello\n"
+            "  status\n"
+            "  scan\n"
+            "  scan ~/Downloads\n"
+            "  scan /path/to/file\n"
+            "  help\n"
+            "  exit"
+        )
+
+    return "Sounix: I don't understand that command yet."
