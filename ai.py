@@ -10,11 +10,13 @@ from google import google_search
 def respond(message):
     original = message.strip()
     command = original.lower()
-    if command.startwith("google ")
-    query = orginal[7:].strip()   
-     
- if command in {"hello", "hi", "hey"}:
-        return "Sounix: Hello, William. I am online."
+    if command.startswith("google "):
+        query = original[7:].strip()
+        return google_search(query)
+
+    if command in {"hello", "hi", "hey"}:
+       
+         return "Sounix: Hello, William. I am online."
 
     if command == "status":
         clamav = "available" if shutil.which("clamscan") else "not installed"
@@ -77,16 +79,16 @@ def respond(message):
         forget(key)
         return f"Sounix: I forgot {key}."
     if command.startswith("calculate "):
-    expression = original[10:].strip()
+        expression = original[10:].strip()
 
-    try:
-        answer = calculate(expression)
-        return f"Sounix: {answer}"
-    except Exception:
-        return "Sounix: I couldn't calculate that."
+        try:
+            answer = calculate(expression)
+            return f"Sounix: {answer}"
+        except Exception:
+            return "Sounix: I couldn't calculate that."
    
 
- if command == "help":
+    if command == "help":
         return (
             "Commands:\n"
             "  hello\n"

@@ -7,35 +7,35 @@ OPS = {
   
      ast.Add: operator.add,
     
-     ast.sub: operator.sub,
+     ast.Sub: operator.sub,
 
-     ast.mult: operator.mult,
+     ast.Mult: operator.mul,
 
-     ast.div: operator.truediv,
+     ast.Div: operator.truediv,
 
-     ast.mod: operator.mod,
+     ast.Mod: operator.mod,
 
-     ast.pow: operator.pow,
+     ast.Pow: operator.pow,
 
-     ast.USub: operator.ng,
+     ast.USub: operator.neg,
 }
 
 
 
 def _eval(node):
-    if isinstance(node, ast.constant):
+    if isinstance(node, ast.Constant):
 
        return node.value
 
-    if instance(node, ast.BinOp):
+    if isinstance(node, ast.BinOp):
  
-       return OPS[type(node.op)] (_eval{node.left), _eval(node.right))
+        return OPS[type(node.op)](_eval(node.left), _eval(node.right))
 
-    if instance(node, ast.UnaryOp):
+    if isinstance(node, ast.UnaryOp):
 
-       return OPS[type(node.op)](_eval(node.left), _eval(node.right))
+        return OPS[type(node.op)](_eval(node.operand))
 
-   raise ValueError("invalid expression")
+    raise ValueError("invalid expression")
 
 def calculate(expression):
     

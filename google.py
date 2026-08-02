@@ -1,21 +1,14 @@
-import webbrowser
+import subprocess
 import urllib.parse
 
 
-
 def google_search(query):
-
     url = (
+        "https://www.google.com/search?q="
+        + urllib.parse.quote_plus(query)
+    )
 
+    subprocess.Popen(["xdg-open", url])
 
-           "https://www.google.com/search?q="
+    return f"Sounix: Opening Google search for '{query}'."
 
-           + urllib.parse.quote_plus(query)
-
-     )
-
-
-
-     webbrowser.open(url)
-
-     return f"sounix: Opening google search for (query)'."
