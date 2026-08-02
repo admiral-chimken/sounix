@@ -6,6 +6,7 @@ from memory import remember, recall, forget, list_memories
 from calculator import calculate
 from google import google_search
 from security_dashboard import security_dashboard
+from travel_mode import travel_report
 
 def respond(message):
     original = message.strip()
@@ -88,7 +89,8 @@ def respond(message):
         except Exception:
             return "Sounix: I couldn't calculate that."
    
-
+    if command in ("travel", "travel mode"):
+         return travel_report()
     if command == "help":
         return (
             "Commands:\n"
@@ -104,6 +106,7 @@ def respond(message):
             "  remember key value\n"
             "  recall key\n"
             "  memories\n"
+            "  travel/n"   
             "  forget key\n"
             "  help\n"
             "  exit"
