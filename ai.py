@@ -5,7 +5,7 @@ from system_info import system_report
 from memory import remember, recall, forget, list_memories
 from calculator import calculate
 from google import google_search
-
+from security_dashboard import security_dashboard
 
 def respond(message):
     original = message.strip()
@@ -13,7 +13,8 @@ def respond(message):
     if command.startswith("google "):
         query = original[7:].strip()
         return google_search(query)
-
+    if command in ("security", "dashboard"):
+       return security_dashboard()
     if command in {"hello", "hi", "hey"}:
        
          return "Sounix: Hello, William. I am online."
@@ -97,6 +98,9 @@ def respond(message):
             "  scan ~/sounix\n"
             "  firewall status\n"
             "  system\n"
+            "  secuirty\n"
+            "  google\n"
+            "  dashboard\n"
             "  remember key value\n"
             "  recall key\n"
             "  memories\n"
