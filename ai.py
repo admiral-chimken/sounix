@@ -7,7 +7,7 @@ from calculator import calculate
 from google import google_search
 from security_dashboard import security_dashboard
 from travel_mode import travel_report
-
+from vpn_check import vpn_status
 def respond(message):
     original = message.strip()
     command = original.lower()
@@ -16,6 +16,8 @@ def respond(message):
         return google_search(query)
     if command in ("security", "dashboard"):
        return security_dashboard()
+    if command in ("vpn", "vpn status"):
+       return vpn_status()
     if command in {"hello", "hi", "hey"}:
        
          return "Sounix: Hello, William. I am online."
@@ -108,6 +110,8 @@ def respond(message):
             "  memories\n"
             "  travel/n"   
             "  forget key\n"
+            "  vpn\n"
+            "  vpn status\n"
             "  help\n"
             "  exit"
         )
