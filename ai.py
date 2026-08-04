@@ -11,6 +11,15 @@ from vpn_check import vpn_status
 from software_manager import install_package, search_packages
 from doctor import doctor
 from network_scan import network_scan
+from power_control import (
+    shutdown_computer,
+    restart_computer,
+    sleep_computer,
+    lock_screen,
+)
+from distro import get_distro 
+
+
 def respond(message):
     original = message.strip()
     command = original.lower()
@@ -105,6 +114,18 @@ def respond(message):
        return doctor()
     if command == "network scan":
         return network_scan()
+    if command == "shutdown":
+        return shutdown_computer()
+
+    if command == "restart":
+        return restart_computer()
+
+    if command == "sleep":
+        return sleep_computer()
+    if command in ("distro", "distribution", "os"):
+       return get_distro()
+    if command in {"lock", "lock screen"}:
+        return lock_screen()
     if command == "help":
         return (
             "Commands:\n"
@@ -119,6 +140,7 @@ def respond(message):
             "  dashboard\n"
             "  remember key value\n"
             "  recall key\n"
+            "  distro\n" 
             "  memories\n"
             "  travel/n"   
             "  forget key\n"
@@ -129,6 +151,10 @@ def respond(message):
             " search package firefox\n"
             "  help\n"
             "  doctor\n"
+            "  shutdown\n"
+            "  restart\n"
+            "  sleep\n"
+            "  lock screen\n"
             "  exit"
         )
 
