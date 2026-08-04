@@ -8,6 +8,8 @@ from google import google_search
 from security_dashboard import security_dashboard
 from travel_mode import travel_report
 from vpn_check import vpn_status
+from software_manager import install_package, search_packages
+from doctor import doctor
 def respond(message):
     original = message.strip()
     command = original.lower()
@@ -90,9 +92,16 @@ def respond(message):
             return f"Sounix: {answer}"
         except Exception:
             return "Sounix: I couldn't calculate that."
-   
+    if command.startswith("install "):
+        package = original[8:].strip ()
+        return install_package(package)
+    if command.startswith("search package"):
+       query = oringinal [15:]. stip()
+       return search_packages(quey)
     if command in ("travel", "travel mode"):
          return travel_report()
+    if command == "doctor":
+       return doctor()
     if command == "help":
         return (
             "Commands:\n"
@@ -112,7 +121,10 @@ def respond(message):
             "  forget key\n"
             "  vpn\n"
             "  vpn status\n"
+            "  install firefox\n"
+            " search package firefox\n"
             "  help\n"
+            "  doctor\n"
             "  exit"
         )
 
