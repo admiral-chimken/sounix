@@ -19,11 +19,11 @@ from power_control import (
 )
 from distro import get_distro
 from admin_tools import enable_firewall, disable_firewall 
-
+from natural_commands import normalize_command
 
 def respond(message):
     original = message.strip()
-    command = original.lower()
+    command = normalize_command(original)
     if command.startswith("google "):
         query = original[7:].strip()
         return google_search(query)
