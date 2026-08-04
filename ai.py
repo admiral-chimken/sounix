@@ -20,7 +20,7 @@ from power_control import (
 from distro import get_distro
 from admin_tools import enable_firewall, disable_firewall 
 from natural_commands import normalize_command
-from file_manager import list_files, make_folder
+from file_manager import list_files, make_folder, copy_file
 def respond(message):
     original = message.strip()
     command = normalize_command(original)
@@ -137,6 +137,14 @@ def respond(message):
     if command.startswith("list "):
         folder = original[5:].strip()
         return list_files(folder)
+    if command.startswith("copy "):
+       parts = original [5:].split(maxsplit=1)
+    if len(parts) != 2:
+       return "sounix: Use: copy source destination"
+
+    source = parts[0] 
+    destinatioon = parts[1]
+    return copy_file(source, destinatioon)  
     if command == "help":
        return (
            "Commands:\n"
@@ -162,6 +170,7 @@ def respond(message):
             " search package firefox\n"
             " list ~/downloads\n"
             " make folder ~/projects\n"    
+            " copy source destinayion\n"
             "  help\n"
             "  doctor\n"
             "  shutdown\n"

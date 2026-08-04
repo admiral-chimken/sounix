@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 def expand_path(path):
@@ -49,3 +50,26 @@ def make_folder (path):
         return f"sounix: could not create folder: (error)"        
          
     (error)
+def copy_file(source, destination):
+    source_path = expand_path(source)
+    destination_path = expand_path(destination)
+
+    if not source_path.exists():
+        return f"Sounix: '{source_path}' does not exist."
+
+    if not source_path.is_file():
+        return "Sounix: The source must be a file."
+
+    answer = input(
+        f"Sounix: Copy '{source_path}' to '{destination_path}'? (yes/no): "
+    ).strip().lower()
+
+    if answer not in {"yes", "y"}:
+        return "Sounix: Copy cancelled."
+
+    try:
+        shutil.copy2(source_path, destination_path)
+        return f"Sounix: Copied '{source_path}' to '{destination_path}'."
+
+    except Exception as error:
+        return f"Sounix: Could not copy the file: {error}"
