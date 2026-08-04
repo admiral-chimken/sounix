@@ -20,7 +20,7 @@ from power_control import (
 from distro import get_distro
 from admin_tools import enable_firewall, disable_firewall 
 from natural_commands import normalize_command
-
+from file_manager import list_files, make_folder
 def respond(message):
     original = message.strip()
     command = normalize_command(original)
@@ -131,9 +131,14 @@ def respond(message):
        return enable_firewall()
     if command == "disable firewall":
        return disable_firewall()
+    if command.startswith ("make folder "):
+       folder = original [12:].strip()
+       return make_folder(folder)
+    if command.startswith("list "):
+        folder = original[5:].strip()
+        return list_files(folder)
     if command == "help":
        return (
-       
            "Commands:\n"
             "  hello\n"
             "  status\n"
@@ -155,6 +160,8 @@ def respond(message):
             "  network scan\n"
             "  install firefox\n"
             " search package firefox\n"
+            " list ~/downloads\n"
+            " make folder ~/projects\n"    
             "  help\n"
             "  doctor\n"
             "  shutdown\n"
