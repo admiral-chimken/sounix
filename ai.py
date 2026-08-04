@@ -10,6 +10,7 @@ from travel_mode import travel_report
 from vpn_check import vpn_status
 from software_manager import install_package, search_packages
 from doctor import doctor
+from network_scan import network_scan
 def respond(message):
     original = message.strip()
     command = original.lower()
@@ -102,6 +103,8 @@ def respond(message):
          return travel_report()
     if command == "doctor":
        return doctor()
+    if command == "network scan":
+        return network_scan()
     if command == "help":
         return (
             "Commands:\n"
@@ -121,6 +124,7 @@ def respond(message):
             "  forget key\n"
             "  vpn\n"
             "  vpn status\n"
+            "  network scan\n"
             "  install firefox\n"
             " search package firefox\n"
             "  help\n"
