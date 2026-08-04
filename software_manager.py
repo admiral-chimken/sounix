@@ -9,6 +9,26 @@ PACKAGE_PATTERN = re.compile(r"^[a-zA-Z0-9@._+-]+$")
 def valid_package_name(package):
     return bool(PACKAGE_PATTERN.fullmatch(package))
 
+def get_package_manager():
+    if shutil.which("pacman"):
+        return "pacman"
+
+    if shutil.which("apt"):
+        return "apt"
+
+        package_manager = get_package_manager()
+
+    if package_manager == "pacman":
+        command = ["sudo", "pacman", "-S", "--needed", package]
+
+    elif package_manager == "apt":
+        command = ["sudo", "apt", "install", "-y", package]
+
+    elif package_manager == "dnf":
+        command = ["sudo", "dnf", "install", "-y", package]
+
+    else:
+        return "Sounix: No supported package manager was found."
 
 def install_package(package):
     package = package.strip()
@@ -46,8 +66,23 @@ def search_packages(query):
         return "Sounix: That search contains invalid characters."
 
     try:
+        package_manager = get_package_manager()
+
+        if package_manager == "pacman":
+            command = ["pacman", "-Ss", query]
+
+        elif package_manager == "apt":
+            command = ["apt", "search", query]
+
+        elif package_manager == "dnf":
+            command = ["dnf", "search", query]
+
+        else:
+            return "Sounix: No supported package manager was found."
+
         result = subprocess.run(
-            ["pacman", "-Ss", query],
+            command,
+           
             capture_output=True,
             text=True,
             timeout=30,

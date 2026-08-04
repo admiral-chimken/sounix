@@ -17,7 +17,8 @@ from power_control import (
     sleep_computer,
     lock_screen,
 )
-from distro import get_distro 
+from distro import get_distro
+from admin_tools import enable_firewall, disable_firewall 
 
 
 def respond(message):
@@ -102,12 +103,12 @@ def respond(message):
             return f"Sounix: {answer}"
         except Exception:
             return "Sounix: I couldn't calculate that."
-    if command.startswith("install "):
+    if command.startswith("install"):
         package = original[8:].strip ()
         return install_package(package)
-    if command.startswith("search package"):
-       query = oringinal [15:]. stip()
-       return search_packages(quey)
+    if command.startswith("search package "):
+       query = original [15:]. strip()
+       return search_packages(query)
     if command in ("travel", "travel mode"):
          return travel_report()
     if command == "doctor":
@@ -126,9 +127,14 @@ def respond(message):
        return get_distro()
     if command in {"lock", "lock screen"}:
         return lock_screen()
+    if command == "enable firewall":
+       return enable_firewall()
+    if command == "disable firewall":
+       return disable_firewall()
     if command == "help":
-        return (
-            "Commands:\n"
+       return (
+       
+           "Commands:\n"
             "  hello\n"
             "  status\n"
             "  scan ~/Downloads\n"
