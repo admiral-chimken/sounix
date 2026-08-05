@@ -1,55 +1,48 @@
 import shutil
 from pathlib import Path
 
+
 def expand_path(path):
     return Path(path).expanduser().resolve()
 
 
-def list_files(path): 
-
+def list_files(path):
     folder = expand_path(path)
 
     if not folder.exists():
-         
-        return f"sounix: '(folder)' is not a folder"
+        return f"Sounix: '{folder}' does not exist."
 
     if not folder.is_dir():
-       return f"sounix: '(folder)' is not a folder"
-
-
+        return f"Sounix: '{folder}' is not a folder."
 
     items = sorted(folder.iterdir())
-    
 
     if not items:
-        return f"sounix: '(folder)' is empty"
+        return f"Sounix: '{folder}' is empty."
 
-    lines = [f"sounix files in (folder):"]
+    lines = [f"Sounix files in {folder}:"]
 
     for item in items:
-   
         marker = "[Folder]" if item.is_dir() else "[File]"
-      
         lines.append(f"{marker} {item.name}")
 
     return "\n".join(lines)
 
 
-def make_folder (path): 
-   
-    folder = expand_path (path)
+def make_folder(path):
+    folder = expand_path(path)
 
     if folder.exists():
-       return f"sounix: '(folder)' already exists"
+        return f"Sounix: '{folder}' already exists."
 
-    try: 
+    try:
         folder.mkdir(parents=True)
-        return f"sounix: created folder '(folder) '."
+        return f"Sounix: Created folder '{folder}'."
 
     except Exception as error:
-        return f"sounix: could not create folder: (error)"        
-         
-    (error)
+        return f"Sounix: Could not create folder: {error}"
+
+
 def copy_file(source, destination):
     source_path = expand_path(source)
     destination_path = expand_path(destination)
@@ -73,3 +66,25 @@ def copy_file(source, destination):
 
     except Exception as error:
         return f"Sounix: Could not copy the file: {error}"
+
+
+def move_file(source, destination):
+    source_path = expand_path(source)
+    destination_path = expand_path(destination)
+
+    if not source_path.exists():
+        return f"Sounix: '{source_path}' does not exist."
+
+    answer = input(
+        f"Sounix: Move '{source_path}' to '{destination_path}'? (yes/no): "
+    ).strip().lower()
+
+    if answer not in {"yes", "y"}:
+        return "Sounix: Move cancelled."
+
+    try:
+        shutil.move(str(source_path), str(destination_path))
+        return f"Sounix: Moved '{source_path}' to '{destination_path}'."
+
+    except Exception as error:
+        return f"Sounix: Could not move the file: {error}"
