@@ -88,3 +88,47 @@ def move_file(source, destination):
 
     except Exception as error:
         return f"Sounix: Could not move the file: {error}"
+def rename_file(source, new_name):
+    source_path = expand_path(source)
+
+    if not source_path.exists():
+        return f"Sounix: '{source_path}' does not exist."
+
+    new_path = source_path.parent / new_name
+
+    answer = input(
+        f"Sounix: Rename '{source_path.name}' to '{new_name}'? (yes/no): "
+    ).strip().lower()
+
+    if answer not in {"yes", "y"}:
+        return "Sounix: Rename cancelled."
+
+    try:
+        source_path.rename(new_path)
+        return f"Sounix: Renamed to '{new_name}'."
+
+    except Exception as error:
+        return f"Sounix: Could not rename file: {error}"
+def delete_file(path):
+    file_path = expand_path(path)
+
+    if not file_path.exists():
+        return f"Sounix: '{file_path}' does not exist."
+
+    answer = input(
+        f"Sounix: Delete '{file_path}'? (yes/no): "
+    ).strip().lower()
+
+    if answer not in {"yes", "y"}:
+        return "Sounix: Delete cancelled."
+
+    try:
+        if file_path.is_dir():
+            shutil.rmtree(file_path)
+        else:
+            file_path.unlink()
+
+        return f"Sounix: Deleted '{file_path}'."
+
+    except Exception as error:
+        return f"Sounix: Could not delete: {error}"

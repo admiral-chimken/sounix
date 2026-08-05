@@ -215,6 +215,23 @@ def respond(message):
         destination = parts[1]
         return move_file(source, destination)
 
+    if command.startswith("rename "):
+        parts = original[7:].split(maxsplit=1)
+
+        if len(parts) != 2:
+            return "Sounix: Use: rename oldname newname"
+
+        source = parts[0]
+        new_name = parts[1]
+
+        return rename_file(source, new_name)
+    if command.startswith("delete "):
+        path = original[7:].strip()
+
+        if not path:
+            return "Sounix: Use: delete <file>"
+
+        return delete_file(path)
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
@@ -266,3 +283,4 @@ def respond(message):
         )
 
     return "Sounix: I do not understand that command yet."   
+
