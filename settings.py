@@ -4,7 +4,7 @@ import shutil
 from firewall import firewall_status 
 from vpn_check import vpn_status
 from distro import get_distro
-
+from os_detect import get_os_details
 sounix_version = "1.0 Beta"
 
 def get_package_manager():
@@ -32,5 +32,6 @@ def settings_report():
           f"package manager(get_package_manager())\n"
           "\n"
           f"firewall:\n(firewall_status())\n"
+          f"{get_os_details()}\n"
            "====================================="
     )         
