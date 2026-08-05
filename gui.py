@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import scrolledtext
 
 from ai import respond
-
+from settings import settings_report
 from file_manager import (
     list_files,
     make_folder,
@@ -11,6 +11,29 @@ from file_manager import (
     rename_file,
     delete_file,
 )
+
+def open_settings():
+    window = tk.Toplevel(root)
+    window.title("Sounix Settings")
+    window.geometry("650x500")
+
+    output = scrolledtext.ScrolledText(
+        window,
+        wrap=tk.WORD,
+        font=("Monospace", 11)
+    )
+
+    output.pack(
+        fill="both",
+        expand=True,
+        padx=10,
+        pady=10
+    )
+
+    output.insert(
+        tk.END,
+        settings_report()
+    )
 from ai import respond 
 root = tk.Tk()
 
@@ -36,7 +59,9 @@ def run_command():
 
 
 def use_command(command):
-
+    if command == "settings":
+        open_settings()
+        return 
     if command == "files":
         open_files()
         return
@@ -48,7 +73,9 @@ def use_command(command):
     command_entry.insert(0, command)
     run_command()
 
-
+    if command == "settings":
+        open_settings()
+        return
 root = tk.Tk()
 root.title("Sounix")
 root.geometry("850x650")
@@ -82,6 +109,7 @@ buttons = [
     ("Travel Mode", "travel mode"),
     ("Memory", "memories"),
     ("Help", "help"),
+    ("Settings", "settings"),
 ]
 
 for index, (label, command) in enumerate(buttons):

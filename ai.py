@@ -27,8 +27,8 @@ from file_manager import (
     copy_file,
     move_file,
 )
-
-
+from settings import settings_report
+from tailscale import tailscale_status
 def respond(message):
     original = message.strip()
     command = normalize_command(original)
@@ -87,7 +87,9 @@ def respond(message):
     # VPN
     if command in {"vpn", "vpn status"}:
         return vpn_status()
-
+    # TAILSCALE
+    if command in ("tailscale", "tailscale status"):
+        return tailscale_status()
     # Network
     if command == "network scan":
         return network_scan()
@@ -232,6 +234,8 @@ def respond(message):
             return "Sounix: Use: delete <file>"
 
         return delete_file(path)
+    if command in ("settings", "config"):
+        return settings_report()
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
