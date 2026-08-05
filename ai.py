@@ -29,7 +29,7 @@ from file_manager import (
 )
 from settings import settings_report
 from tailscale import tailscale_status
-from updater import check_update, update_sounix
+from updater import check_updates, update_sounix
 def respond(message):
     original = message.strip()
     command = normalize_command(original)
@@ -238,7 +238,7 @@ def respond(message):
     if command in ("settings", "config"):
         return settings_report()
     if command == "check updates":
-    return check_updates()
+        return check_updates()
 
     if command == "update sounix":
        return update_sounix()
