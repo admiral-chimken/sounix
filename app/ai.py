@@ -29,7 +29,7 @@ from file_manager import (
 from settings import settings_report
 from tailscale import tailscale_status
 from updater import check_updates, update_sounix
-
+from health import health_report
 
 pending_action = None
 
@@ -125,7 +125,16 @@ def respond(message):
             "Continue? (yes/no)"
         )
 
-    if command in {"security", "dashboard", "cyber", "cyber center"}:
+    if command in {
+        "security",
+        "dashboard",
+        "cyber",
+        "cyber center",
+        "health",
+        "system health",
+        "security health",
+        "health report",
+    }:
         return security_dashboard()
 
     # System information
@@ -347,6 +356,14 @@ def respond(message):
             "Project:\n"
             "https://github.com/admiral-chimken/sounix"
         )
+    if command in {
+        "health",
+        "system health",
+        "health report",
+        "security health",
+    }:
+        return health_report()
+    
     if command in {"about", "who are you", "creator"}:
         return (
             "Hello, I'm Sounix.\n\n"
@@ -435,6 +452,7 @@ def respond(message):
             "  install <package>\n"
             "  search package <name>\n"
             "\n"
+            "\health\n"
             "Files:\n"
             "  list <folder>\n"
             "  make folder <path>\n"
