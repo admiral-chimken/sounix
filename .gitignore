@@ -1,6 +1,7 @@
-__pycache__/
+build/
+dist/
+*.spec
 *.pyc
-ai.py.backup
-
+__pycache__/
 venv/
-.env
+app/ai.py.broken_backup
