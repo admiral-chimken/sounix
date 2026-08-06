@@ -29,7 +29,7 @@ from file_manager import (
 from settings import settings_report
 from tailscale import tailscale_status
 from updater import check_updates, update_sounix
-
+import getpass
 
 pending_action = None
 
@@ -79,7 +79,10 @@ def respond(message):
 
     # Basic conversation
     if command in {"hello", "hi", "hey"}:
-        return "Sounix: Hello, William."
+        username = getpass.getuser().capitalize()   
+    return (
+     f"sounix: hello (username)."
+  )  
 
     # Google search
     if command.startswith("google "):
