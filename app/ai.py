@@ -328,6 +328,22 @@ def respond(message):
     if command == "update sounix":
         return update_sounix()
 
+    if command in {"about", "who are you", "creator"}:
+        return (
+            "Hello, I'm Sounix.\n\n"
+            "I'm a cybersecurity-focused, multipurpose assistant created to "
+            "help protect, manage, and better understand your computer.\n\n"
+            "I may not be like ChatGPT, Claude, or other AI assistants, "
+            "but I have my own purpose.\n\n"
+            "I was built using Python, with Arch Linux as my original "
+            "development environment.\n\n"
+            "I'm still under active development, so new features and "
+            "improvements will continue over time.\n\n"
+            "Created and developed by AdmiralChimken.\n\n"
+            "GitHub:\n"
+            "https://github.com/admiral-chimken/sounix\n\n"
+            "Thank you for using Sounix!"
+        )  
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
