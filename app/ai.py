@@ -211,12 +211,25 @@ def respond(message):
 
         return search_packages(query)
 
-    # Power controls
+       # Power controls:
+      
     if command == "shutdown":
-        return shutdown_computer()
+        pending_action = "shutdown"
+
+        return (
+            "Sounix: You are about to shut down your computer.\n\n"
+            "Please save any open work first.\n\n"
+            "Continue? (yes/no)"
+        )
 
     if command == "restart":
-        return restart_computer()
+        pending_action = "restart"
+
+        return (
+            "Sounix: You are about to restart your computer.\n\n"
+            "Please save any open work first.\n\n"
+            "Continue? (yes/no)"
+        )
 
     if command == "sleep":
         return sleep_computer()
