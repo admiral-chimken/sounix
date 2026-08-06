@@ -1,7 +1,7 @@
 import shutil
 
 from antivirus import scan_path
-from firewall import firewall_status
+from firewall import firewall_status, enable_firewall, disable_firewall
 from system_info import system_report
 from memory import remember, recall, forget, list_memories
 from calculator import calculate
@@ -60,8 +60,11 @@ def respond(message):
         return scan_path(path)
 
     # Firewall and security
-    if command in {"firewall", "firewall status"}:
-        return firewall_status()
+    if command == "enable firewall":
+        return enable_firewall()
+
+    if command == "disable firewall":
+        return disable_firewall()
 
     if command in {"security", "dashboard", "cyber", "cyber center"}:
         return security_dashboard()
