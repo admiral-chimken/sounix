@@ -6,37 +6,35 @@ Sounix is a personal Linux assistant built with Python.
 
 It provides a simple interface for system tools, security controls, file management, and automation.
 
+Sounix is under active development. Some planned features are not available yet.
 ---
 
-# Features
+# Current Features
 
-## System
 - System information
-- Distribution detection
-- System health checks
-- Power controls
-
-## Security
-- Firewall status
-- Enable/disable firewall
+- Linux distribution detection
+- Firewall status and controls
 - VPN status
-- Tailscale support
-- Network scanning tools
-
-## Assistant
+- Tailscale status
+- Network scanning
+- File management
 - Memory system
 - Calculator
 - Google search
-- Voice support
-- Natural commands
+- Settings dashboard
+- Graphical interface
+- Update checker
 
-## File Management
-- Browse files
-- Create folders
-- Copy files
-- Move files
-- Rename files
-- Delete files
+# Planned Features
+
+- Voice commands
+- Smarter AI responses
+- Maps and location tools
+- Improved cross-platform support
+- Desktop shortcut and app icon
+- Background service
+- Notifications
+- Expanded download manager
 
 ---
 
