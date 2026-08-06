@@ -52,7 +52,29 @@ It provides a simple interface for system tools, security controls, file managem
 
 ## Install Sounix
 
-Clone the repository:
+
+# Download & Installation
+
+## 1. Clone the repository
 
 ```bash
-git clone YOUR_REPOSITORY_LINK
+git clone https://github.com/admiral-chimken/sounix.git
+```
+
+## 2. Enter the project folder
+
+```bash
+cd sounix
+```
+
+## 3. Run the installer
+
+```bash
+./install.sh
+```
+
+## 4. Start Sounix
+
+```bash
+./sounix
+```
