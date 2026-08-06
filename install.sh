@@ -22,8 +22,19 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 echo ""
+echo "Creating Sounix launcher..."
+
+cat > sounix <<EOF
+#!/bin/bash
+cd "$(dirname "\$0")"
+source venv/bin/activate
+python3 app/gui.py
+EOF
+
+chmod +x sounix
+
+echo ""
 echo "Sounix installation complete!"
 echo ""
-echo "Run Sounix with:"
-echo "source venv/bin/activate"
-echo "python3 gui.py"
+echo "Launch with:"
+echo "./sounix"
