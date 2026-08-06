@@ -327,7 +327,26 @@ def respond(message):
 
     if command == "update sounix":
         return update_sounix()
-
+    if command == "version":
+        return (
+            "Sounix Version 1.0.0\n\n"
+            "Status: Beta\n"
+            "Language: Python\n"
+            "Platform: Linux\n"
+            "Developer: AdmiralChimken\n"
+            "GitHub:\n"
+            "https://github.com/admiral-chimken/sounix"
+        )
+    if command == "version":
+        return (
+            "Sounix Version 1.0.0\n\n"
+            "Status: Beta\n"
+            "Language: Python\n"
+            "Platform: Linux\n"
+            "Developer: AdmiralChimken\n"
+            "Project:\n"
+            "https://github.com/admiral-chimken/sounix"
+        )
     if command in {"about", "who are you", "creator"}:
         return (
             "Hello, I'm Sounix.\n\n"
@@ -352,6 +371,13 @@ def respond(message):
             "General:\n"
             "  hello\n"
             "  help\n"
+            "\n"
+            "About Sounix:\n"
+            "  about\n"
+            "  who are you\n"
+            "  creator\n"
+            "  version\n"
+            "\n" 
             "  google <search>\n"
             "  calculate <expression>\n"
             "\n"
