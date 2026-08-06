@@ -1,5 +1,3 @@
-import shutil
-
 from antivirus import scan_path
 from firewall import firewall_status, enable_firewall, disable_firewall
 from system_info import system_report
@@ -19,23 +17,51 @@ from power_control import (
     lock_screen,
 )
 from distro import get_distro
-from admin_tools import enable_firewall, disable_firewall
 from natural_commands import normalize_command
 from file_manager import (
     list_files,
     make_folder,
     copy_file,
     move_file,
+    rename_file,
+    delete_file,
 )
 from settings import settings_report
 from tailscale import tailscale_status
 from updater import check_updates, update_sounix
+
+
+pending_action = None
+
+
 def respond(message):
+    global pending_action
+
     original = message.strip()
     command = normalize_command(original)
 
     if not command:
         return "Sounix: Please enter a command."
+
+    # Handle yes/no answers for actions awaiting confirmation.
+    if pending_action is not None:
+        if command in {"yes", "y"}:
+            action = pending_action
+            pending_action = None
+
+            if action == "enable firewall":
+                return enable_firewall()
+
+            if action == "disable firewall":
+                return disable_firewall()
+
+            return "Sounix: The pending action was not recognized."
+
+        if command in {"no", "n", "cancel"}:
+            pending_action = None
+            return "Sounix: Action cancelled."
+
+        return "Sounix: Please answer yes or no."
 
     # Basic conversation
     if command in {"hello", "hi", "hey"}:
@@ -60,20 +86,33 @@ def respond(message):
         return scan_path(path)
 
     # Firewall and security
+    if command in {"firewall", "firewall status"}:
+        return firewall_status()
+
     if command == "enable firewall":
-        return enable_firewall()
+        pending_action = "enable firewall"
+
+        return (
+            "Sounix: You are about to enable the firewall.\n\n"
+            "A firewall helps block unwanted network connections and is "
+            "recommended for most users.\n\n"
+            "A terminal will open and request your administrator password.\n"
+            "Continue? (yes/no)"
+        )
 
     if command == "disable firewall":
-        return disable_firewall()
+        pending_action = "disable firewall"
+
+        return (
+            "Sounix: Warning!\n\n"
+            "Disabling your firewall can reduce your computer's security.\n\n"
+            "Only continue if you understand why you are doing it.\n\n"
+            "A terminal will open and request your administrator password.\n"
+            "Continue? (yes/no)"
+        )
 
     if command in {"security", "dashboard", "cyber", "cyber center"}:
         return security_dashboard()
-
-    if command == "enable firewall":
-        return enable_firewall()
-
-    if command == "disable firewall":
-        return disable_firewall()
 
     # System information
     if command in {"system", "system info", "status"}:
@@ -88,12 +127,13 @@ def respond(message):
     if command in {"distro", "distribution", "os"}:
         return get_distro()
 
-    # VPN
+    # VPN and Tailscale
     if command in {"vpn", "vpn status"}:
         return vpn_status()
-    # TAILSCALE
-    if command in ("tailscale", "tailscale status"):
+
+    if command in {"tailscale", "tailscale status"}:
         return tailscale_status()
+
     # Network
     if command == "network scan":
         return network_scan()
@@ -151,8 +191,8 @@ def respond(message):
             answer = calculate(expression)
             return f"Sounix: {answer}"
 
-        except Exception:
-            return "Sounix: I couldn't calculate that."
+        except Exception as error:
+            return f"Sounix: I couldn't calculate that: {error}"
 
     # Package manager
     if command.startswith("install "):
@@ -225,27 +265,30 @@ def respond(message):
         parts = original[7:].split(maxsplit=1)
 
         if len(parts) != 2:
-            return "Sounix: Use: rename oldname newname"
+            return "Sounix: Use: rename old-path new-name"
 
         source = parts[0]
         new_name = parts[1]
-
         return rename_file(source, new_name)
+
     if command.startswith("delete "):
         path = original[7:].strip()
 
         if not path:
-            return "Sounix: Use: delete <file>"
+            return "Sounix: Use: delete <file-or-folder>"
 
         return delete_file(path)
-    if command in ("settings", "config"):
+
+    # Settings and updates
+    if command in {"settings", "config"}:
         return settings_report()
+
     if command == "check updates":
         return check_updates()
 
     if command == "update sounix":
-       return update_sounix()
-    
+        return update_sounix()
+
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
@@ -265,11 +308,13 @@ def respond(message):
             "  security\n"
             "  doctor\n"
             "  vpn status\n"
+            "  tailscale status\n"
             "  network scan\n"
             "\n"
             "System:\n"
             "  system\n"
             "  distro\n"
+            "  settings\n"
             "  travel mode\n"
             "  shutdown\n"
             "  restart\n"
@@ -291,10 +336,15 @@ def respond(message):
             "  make folder <path>\n"
             "  copy source destination\n"
             "  move source destination\n"
+            "  rename old-path new-name\n"
+            "  delete <file-or-folder>\n"
+            "\n"
+            "Updates:\n"
+            "  check updates\n"
+            "  update sounix\n"
             "\n"
             "  exit\n"
             "====================================="
         )
 
-    return "Sounix: I do not understand that command yet."   
-
+    return "Sounix: I do not understand that command yet."
