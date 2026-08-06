@@ -79,10 +79,11 @@ def respond(message):
 
     # Basic conversation
     if command in {"hello", "hi", "hey"}:
-        username = getpass.getuser().capitalize()   
-    return (
-     f"sounix: hello (username)."
-  )  
+        username = getpass.getuser().capitalize()
+
+        return (
+            f"Sounix: Hello, {username}! "
+         )  
 
     # Google search
     if command.startswith("google "):
