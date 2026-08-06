@@ -284,13 +284,29 @@ def respond(message):
         new_name = parts[1]
         return rename_file(source, new_name)
 
-    if command.startswith("delete "):
-        path = original[7:].strip()
+        if command.startswith("delete "):
+       
+         path = original[7:].strip()
 
         if not path:
             return "Sounix: Use: delete <file-or-folder>"
 
-        return delete_file(path)
+        pending_action = f"delete:{path}"
+
+        return (
+            "Sounix: You are about to permanently delete:\n"
+            f"{path}\n\n"
+            "This action may not be reversible.\n\n"
+            "Continue? (yes/no)"
+        )
+    pending_action = f"delete:{path}"
+
+    return (
+        "Sounix: You are about to permanently delete:\n"
+        f"{path}\n\n"
+        "This action may not be reversible.\n\n"
+        "Continue? (yes/no)"
+    )
 
     # Settings and updates
     if command in {"settings", "config"}:
