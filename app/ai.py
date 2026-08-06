@@ -29,7 +29,7 @@ from file_manager import (
 from settings import settings_report
 from tailscale import tailscale_status
 from updater import check_updates, update_sounix
-from health import health_report
+
 
 pending_action = None
 
@@ -452,7 +452,7 @@ def respond(message):
             "  install <package>\n"
             "  search package <name>\n"
             "\n"
-            "\health\n"
+            " health\n"
             "Files:\n"
             "  list <folder>\n"
             "  make folder <path>\n"
