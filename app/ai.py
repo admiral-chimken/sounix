@@ -363,6 +363,28 @@ def respond(message):
             "https://github.com/admiral-chimken/sounix\n\n"
             "Thank you for using Sounix!"
         )  
+    if command in {"news", "what's new", "whats new", "updates"}:
+        return (
+            "========== SOUNIX NEWS ==========\n\n"
+            "Version: 1.0.0 Beta\n\n"
+            "Latest Improvements:\n"
+            "• New graphical interface\n"
+            "• Firewall safety confirmations\n"
+            "• Software installation confirmations\n"
+            "• Shutdown and restart confirmations\n"
+            "• File delete confirmations\n"
+            "• About and Version commands\n"
+            "• Improved Arch Linux support\n"
+            "• Improved Kali Linux compatibility\n"
+            "• Updated installer\n\n"
+            "Coming Soon:\n"
+            "• Voice interaction\n"
+            "• Better natural language understanding\n"
+            "• Modern dashboard\n"
+            "• Automatic updates\n"
+            "• Windows and macOS installers\n\n"
+            "Thank you for supporting Sounix!"
+        )
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
@@ -377,6 +399,7 @@ def respond(message):
             "  who are you\n"
             "  creator\n"
             "  version\n"
+            "  news\n"          
             "\n" 
             "  google <search>\n"
             "  calculate <expression>\n"
