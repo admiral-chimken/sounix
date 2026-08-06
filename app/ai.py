@@ -402,6 +402,77 @@ def respond(message):
             "• Windows and macOS installers\n\n"
             "Thank you for supporting Sounix!"
         )
+    if command == "help security":
+        return (
+            "========== SECURITY HELP ==========\n\n"
+            "firewall status\n"
+            "enable firewall\n"
+            "disable firewall\n"
+            "security\n"
+            "health\n"
+            "doctor\n"
+            "vpn status\n"
+            "tailscale status\n"
+            "network scan\n"
+            "scan <path>\n"
+        )
+
+    if command == "help files":
+        return (
+            "========== FILE HELP ==========\n\n"
+            "list <folder>\n"
+            "make folder <path>\n"
+            "copy source destination\n"
+            "move source destination\n"
+            "rename old-path new-name\n"
+            "delete <file-or-folder>\n"
+        )
+
+    if command == "help memory":
+        return (
+            "========== MEMORY HELP ==========\n\n"
+            "remember key = value\n"
+            "recall key\n"
+            "forget key\n"
+            "memories\n"
+        )
+
+    if command == "help system":
+        return (
+            "========== SYSTEM HELP ==========\n\n"
+            "system\n"
+            "distro\n"
+            "settings\n"
+            "travel mode\n"
+            "shutdown\n"
+            "restart\n"
+            "sleep\n"
+            "lock screen\n"
+            "check updates\n"
+            "update sounix\n"
+        )
+
+    if command in {"help network", "help networking"}:
+        return (
+            "========== NETWORK HELP ==========\n\n"
+            "vpn status\n"
+            "tailscale status\n"
+            "network scan\n"
+            "firewall status\n"
+        )
+
+    if command in {"help assistant", "help general"}:
+        return (
+            "========== ASSISTANT HELP ==========\n\n"
+            "hello\n"
+            "about\n"
+            "who are you\n"
+            "creator\n"
+            "version\n"
+            "news\n"
+            "google <search>\n"
+            "calculate <expression>\n"
+        )
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
@@ -460,6 +531,13 @@ def respond(message):
             "  move source destination\n"
             "  rename old-path new-name\n"
             "  delete <file-or-folder>\n"
+            "Help Categories:\n"
+            "  help security\n"
+            "  help files\n"
+            "  help memory\n"
+            "  help system\n"
+            "  help network\n"
+            "  help assistant\n"
             "\n"
             "Updates:\n"
             "  check updates\n"
