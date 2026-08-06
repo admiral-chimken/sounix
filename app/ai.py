@@ -55,6 +55,20 @@ def respond(message):
             if action == "disable firewall":
                 return disable_firewall()
 
+            if action == "shutdown":
+                return shutdown_computer()
+
+            if action == "restart":
+                return restart_computer()
+
+            if action.startswith("delete:"):
+                path = action.split(":", 1)[1]
+                return delete_file(path)
+
+            if action.startswith("install:"):
+                package = action.split(":", 1)[1]
+                return install_package(package)
+
             return "Sounix: The pending action was not recognized."
 
         if command in {"no", "n", "cancel"}:
@@ -190,7 +204,6 @@ def respond(message):
         try:
             answer = calculate(expression)
             return f"Sounix: {answer}"
-
         except Exception as error:
             return f"Sounix: I couldn't calculate that: {error}"
 
@@ -201,7 +214,14 @@ def respond(message):
         if not package:
             return "Sounix: Use: install <package>"
 
-        return install_package(package)
+        pending_action = f"install:{package}"
+
+        return (
+            f"Sounix: You are about to install:\n{package}\n\n"
+            "Installing software may require administrator permission and "
+            "will download files from your system's package repositories.\n\n"
+            "Continue? (yes/no)"
+        )
 
     if command.startswith("search package "):
         query = original[15:].strip()
@@ -211,8 +231,7 @@ def respond(message):
 
         return search_packages(query)
 
-       # Power controls:
-      
+    # Power controls
     if command == "shutdown":
         pending_action = "shutdown"
 
@@ -284,9 +303,8 @@ def respond(message):
         new_name = parts[1]
         return rename_file(source, new_name)
 
-        if command.startswith("delete "):
-       
-         path = original[7:].strip()
+    if command.startswith("delete "):
+        path = original[7:].strip()
 
         if not path:
             return "Sounix: Use: delete <file-or-folder>"
@@ -299,14 +317,6 @@ def respond(message):
             "This action may not be reversible.\n\n"
             "Continue? (yes/no)"
         )
-    pending_action = f"delete:{path}"
-
-    return (
-        "Sounix: You are about to permanently delete:\n"
-        f"{path}\n\n"
-        "This action may not be reversible.\n\n"
-        "Continue? (yes/no)"
-    )
 
     # Settings and updates
     if command in {"settings", "config"}:
