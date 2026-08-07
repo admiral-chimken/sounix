@@ -48,8 +48,12 @@ def configure_theme():
         pass
 
     style.configure(
-        "TFrame",
-        background=BACKGROUND,
+    "TButton",
+    background=PANEL_LIGHT,
+    foreground=TEXT,
+    font=("Sans", 10),
+    padding=(8, 4),
+
     )
 
     style.configure(
@@ -113,11 +117,12 @@ def configure_theme():
     )
 
     style.configure(
-        "Danger.TButton",
-        background=DANGER,
-        foreground=TEXT,
-        font=("Sans", 10),
-        padding=(10, 8),
+    "Danger.TButton",
+    background=DANGER,
+    foreground=TEXT,
+    font=("Sans", 10),
+    padding=(8, 4),
+
     )
 
     style.map(
@@ -706,7 +711,7 @@ def create_section(parent, title, buttons):
 
     section.pack(
         fill="x",
-        pady=6,
+        pady=1,
     )
 
     ttk.Label(
@@ -718,9 +723,18 @@ def create_section(parent, title, buttons):
         column=0,
         columnspan=4,
         sticky="w",
-        padx=12,
-        pady=(10, 6),
+        padx=10,
+        pady=(3, 2),
     )
+
+    screen_width = root.winfo_screenwidth()
+
+    if screen_width < 900:
+        columns = 2
+    elif screen_width < 1200:
+        columns = 3
+    else:
+        columns = 4
 
     for index, item in enumerate(buttons):
         label = item[0]
@@ -739,18 +753,20 @@ def create_section(parent, title, buttons):
         )
 
         button.grid(
-            row=(index // 4) + 1,
-            column=index % 4,
+            row=(index // columns) + 1,
+            column=index % columns,
             sticky="ew",
-            padx=7,
-            pady=7,
+            padx=4,
+            pady=2,
         )
 
-    for column in range(4):
+    for column in range(columns):
         section.grid_columnconfigure(
             column,
             weight=1,
-        )
+        )        
+
+    
 
 
 # =========================================================
@@ -763,13 +779,22 @@ root.title(
     f"Sounix {SOUNIX_VERSION}"
 )
 
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+
+window_width = int(screen_width * 0.90)
+window_height = int(screen_height * 0.90)
+
+window_width = max(800, min(window_width, 1400))
+window_height = max(600, min(window_height, 1000))
+
 root.geometry(
-    "1000x820"
+    f"{window_width}x{window_height}"
 )
 
 root.minsize(
     800,
-    650,
+    600,
 )
 
 root.configure(
@@ -785,7 +810,9 @@ root.grid_columnconfigure(
 
 root.grid_rowconfigure(
     2,
-    weight=1,
+    weight=3,
+    minsize=300,
+
 )
 
 
@@ -793,7 +820,10 @@ root.grid_rowconfigure(
 # HEADER
 # =========================================================
 
-header = ttk.Frame(root)
+header = tk.Frame(
+    root,
+    background=BACKGROUND,
+)
 
 header.grid(
     row=0,
@@ -842,24 +872,116 @@ ttk.Label(
     rowspan=2,
     sticky="e",
 )
-
-
 # =========================================================
 # MAIN DASHBOARD
 # =========================================================
 
-dashboard_container = tk.Frame(
+# Automatically choose a dashboard height based on the screen.
+screen_height = root.winfo_screenheight()
+
+dashboard_height = int(screen_height * 0.38)
+dashboard_height = max(220, min(dashboard_height, 360))
+
+
+dashboard_holder = tk.Frame(
     root,
     background=BACKGROUND,
 )
 
-dashboard_container.grid(
+dashboard_holder.grid(
     row=1,
     column=0,
     sticky="ew",
     padx=18,
     pady=(4, 6),
 )
+
+dashboard_holder.grid_columnconfigure(
+    0,
+    weight=1,
+)
+
+
+dashboard_canvas = tk.Canvas(
+    dashboard_holder,
+    background=BACKGROUND,
+    highlightthickness=0,
+    height=dashboard_height,
+)
+
+dashboard_scrollbar = ttk.Scrollbar(
+    dashboard_holder,
+    orient="vertical",
+    command=dashboard_canvas.yview,
+)
+
+dashboard_canvas.configure(
+    yscrollcommand=dashboard_scrollbar.set,
+)
+
+
+dashboard_canvas.grid(
+    row=0,
+    column=0,
+    sticky="ew",
+)
+
+dashboard_scrollbar.grid(
+    row=0,
+    column=1,
+    sticky="ns",
+)
+
+
+dashboard_container = tk.Frame(
+    dashboard_canvas,
+    background=BACKGROUND,
+)
+
+dashboard_window = dashboard_canvas.create_window(
+    (0, 0),
+    window=dashboard_container,
+    anchor="nw",
+)
+
+
+def update_dashboard_scrollregion(event=None):
+    dashboard_canvas.configure(
+        scrollregion=dashboard_canvas.bbox("all")
+    )
+
+
+def resize_dashboard_content(event):
+    dashboard_canvas.itemconfigure(
+        dashboard_window,
+        width=event.width,
+    )
+
+
+dashboard_container.bind(
+    "<Configure>",
+    update_dashboard_scrollregion,
+)
+
+dashboard_canvas.bind(
+    "<Configure>",
+    resize_dashboard_content,
+)
+
+
+# Mouse wheel support
+def dashboard_mousewheel(event):
+    dashboard_canvas.yview_scroll(
+        int(-1 * (event.delta / 120)),
+        "units",
+    )
+
+
+dashboard_canvas.bind(
+    "<MouseWheel>",
+    dashboard_mousewheel,
+)
+
 
 system_status_var = tk.StringVar(
     value="Ready"
@@ -881,14 +1003,16 @@ status_panel = ttk.Frame(
 
 status_panel.pack(
     fill="x",
-    pady=(0, 6),
+    pady=(0, 4),
 )
+
 
 status_items = [
     ("System", system_status_var),
     ("Security", security_status_var),
     ("Updates", updates_status_var),
 ]
+
 
 for index, (label_text, variable) in enumerate(status_items):
     item = tk.Frame(
@@ -900,8 +1024,8 @@ for index, (label_text, variable) in enumerate(status_items):
         row=0,
         column=index,
         sticky="ew",
-        padx=8,
-        pady=8,
+        padx=6,
+        pady=4,
     )
 
     status_panel.grid_columnconfigure(
@@ -914,7 +1038,7 @@ for index, (label_text, variable) in enumerate(status_items):
         text=label_text,
         background=PANEL,
         foreground=ACCENT,
-        font=("Sans", 11, "bold"),
+        font=("Sans", 10, "bold"),
     ).pack()
 
     tk.Label(
@@ -922,9 +1046,9 @@ for index, (label_text, variable) in enumerate(status_items):
         textvariable=variable,
         background=PANEL,
         foreground=TEXT,
-        font=("Sans", 10),
+        font=("Sans", 9),
     ).pack(
-        pady=(2, 0),
+        pady=(1, 0),
     )
 
 
@@ -938,6 +1062,7 @@ create_section(
         ("Settings", "settings"),
     ],
 )
+
 
 create_section(
     dashboard_container,
@@ -954,6 +1079,7 @@ create_section(
     ],
 )
 
+
 create_section(
     dashboard_container,
     "FILES",
@@ -962,6 +1088,7 @@ create_section(
         ("List Home", "list ~"),
     ],
 )
+
 
 create_section(
     dashboard_container,
@@ -975,9 +1102,7 @@ create_section(
         ("Version", "version"),
     ],
 )
-
-
-# =========================================================
+# ========================================================
 # OUTPUT PANEL
 # =========================================================
 
