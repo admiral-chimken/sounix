@@ -608,14 +608,89 @@ dashboard_frame.grid(
 for column in range(3):
     dashboard_frame.grid_columnconfigure(column, weight=1)
 
+system_card_status = tk.StringVar(value="Ready")
+security_card_status = tk.StringVar(value="Not checked")
+updates_card_status = tk.StringVar(value="Checking...")
 
-def create_dashboard_card(column, title, description, button_text, command):
+def create_dashboard_card(
+    column,
+    title,
+    description,
+    status_variable,
+    button_text,
+    command,
+):
     card = tk.Frame(
         dashboard_frame,
         background=PANEL,
         highlightbackground=PANEL_LIGHT,
         highlightthickness=1,
     )
+
+    card.grid(
+        row=0,
+        column=column,
+        sticky="nsew",
+        padx=6,
+        pady=6,
+    )
+
+    title_label = tk.Label(
+        card,
+        text=title,
+        background=PANEL,
+        foreground=ACCENT,
+        font=("Sans", 13, "bold"),
+    )
+
+    title_label.pack(
+        anchor="w",
+        padx=12,
+        pady=(10, 3),
+    )
+
+    description_label = tk.Label(
+        card,
+        text=description,
+        background=PANEL,
+        foreground=MUTED_TEXT,
+        font=("Sans", 10),
+        justify="left",
+        wraplength=240,
+    )
+
+    description_label.pack(
+        anchor="w",
+        padx=12,
+        pady=(0, 8),
+    )
+
+    status_label = tk.Label(
+        card,
+        textvariable=status_variable,
+        background=PANEL,
+        foreground=TEXT,
+        font=("Sans", 10, "bold"),
+    )
+
+    status_label.pack(
+        anchor="w",
+        padx=12,
+        pady=(0, 10),
+    )
+
+    action_button = ttk.Button(
+        card,
+        text=button_text,
+        command=lambda: use_command(command),
+    )
+
+    action_button.pack(
+        fill="x",
+        padx=12,
+        pady=(0, 12),
+    )
+    
 
     card.grid(
         row=0,
@@ -671,6 +746,7 @@ create_dashboard_card(
     0,
     "System",
     "View system information and diagnostics.",
+    system_card_status,
     "System Info",
     "system",
 )
@@ -679,6 +755,7 @@ create_dashboard_card(
     1,
     "Security",
     "Review firewall, VPN, and security tools.",
+    security_card_status,
     "Run Health Check",
     "health",
 )
@@ -687,9 +764,11 @@ create_dashboard_card(
     2,
     "Updates",
     "Check GitHub for the newest Sounix version.",
+    updates_card_status,
     "Check Updates",
     "check updates",
 )
+  
 notebook = ttk.Notebook(root)
 notebook.grid(
     row=2,
