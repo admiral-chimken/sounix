@@ -547,7 +547,7 @@ root.configure(background=BACKGROUND)
 
 configure_theme()
 
-root.grid_rowconfigure(2, weight=1)
+root.grid_rowconfigure(3, weight=1)
 root.grid_columnconfigure(0, weight=1)
 
 header = ttk.Frame(root)
@@ -592,10 +592,107 @@ ttk.Label(
     rowspan=2,
     sticky="e",
 )
+dashboard_frame = ttk.Frame(
+    root,
+    style="Panel.TFrame",
+)
 
+dashboard_frame.grid(
+    row=1,
+    column=0,
+    sticky="ew",
+    padx=18,
+    pady=(4, 6),
+)
+
+for column in range(3):
+    dashboard_frame.grid_columnconfigure(column, weight=1)
+
+
+def create_dashboard_card(column, title, description, button_text, command):
+    card = tk.Frame(
+        dashboard_frame,
+        background=PANEL,
+        highlightbackground=PANEL_LIGHT,
+        highlightthickness=1,
+    )
+
+    card.grid(
+        row=0,
+        column=column,
+        sticky="nsew",
+        padx=6,
+        pady=6,
+    )
+
+    title_label = tk.Label(
+        card,
+        text=title,
+        background=PANEL,
+        foreground=ACCENT,
+        font=("Sans", 13, "bold"),
+    )
+
+    title_label.pack(
+        anchor="w",
+        padx=12,
+        pady=(10, 3),
+    )
+
+    description_label = tk.Label(
+        card,
+        text=description,
+        background=PANEL,
+        foreground=MUTED_TEXT,
+        font=("Sans", 10),
+        justify="left",
+    )
+
+    description_label.pack(
+        anchor="w",
+        padx=12,
+        pady=(0, 10),
+    )
+
+    action_button = ttk.Button(
+        card,
+        text=button_text,
+        command=lambda: use_command(command),
+    )
+
+    action_button.pack(
+        fill="x",
+        padx=12,
+        pady=(0, 12),
+    )
+
+
+create_dashboard_card(
+    0,
+    "System",
+    "View system information and diagnostics.",
+    "System Info",
+    "system",
+)
+
+create_dashboard_card(
+    1,
+    "Security",
+    "Review firewall, VPN, and security tools.",
+    "Run Health Check",
+    "health",
+)
+
+create_dashboard_card(
+    2,
+    "Updates",
+    "Check GitHub for the newest Sounix version.",
+    "Check Updates",
+    "check updates",
+)
 notebook = ttk.Notebook(root)
 notebook.grid(
-    row=1,
+    row=2,
     column=0,
     sticky="ew",
     padx=18,
@@ -655,7 +752,7 @@ for section_name, buttons in sections.items():
 
 output_frame = ttk.Frame(root, style="Panel.TFrame")
 output_frame.grid(
-    row=2,
+    row=3,
     column=0,
     sticky="nsew",
     padx=18,
@@ -686,7 +783,7 @@ output_box.configure(state="disabled")
 
 command_frame = ttk.Frame(root)
 command_frame.grid(
-    row=3,
+    row=4,
     column=0,
     sticky="ew",
     padx=18,
