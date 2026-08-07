@@ -30,9 +30,10 @@ from settings import settings_report
 from tailscale import tailscale_status
 from updater import check_updates, update_sounix
 import getpass
-
+from plugin_loader import load_plugins
 pending_action = None
 
+plugins = load_plugins()
 
 def respond(message):
     global pending_action
@@ -477,6 +478,7 @@ def respond(message):
             "google <search>\n"
             "calculate <expression>\n"
         )
+                     
     # Help
     if command in {"help", "commands", "what can you do"}:
         return (
@@ -550,5 +552,13 @@ def respond(message):
             "  exit\n"
             "====================================="
         )
+    # Plugins
+    for plugin_command, plugin_run in plugins.items():
+        if command == plugin_command:
+            return plugin_run("")
 
-    return "Sounix: I do not understand that command yet."
+        if command.startswith(plugin_command + " "):
+            arguments = original[len(plugin_command):].strip()
+            return plugin_run(arguments)
+
+    return "Sounix: I don't understand that command yet."
