@@ -1,37 +1,43 @@
 import threading
 import tkinter as tk
 from tkinter import scrolledtext, ttk
-from updater import check_updates
+
 from ai import respond
-from settings import settings_report
 from file_manager import (
+    copy_file,
+    delete_file,
     list_files,
     make_folder,
-    copy_file,
     move_file,
     rename_file,
-    delete_file,
 )
+from settings import settings_report
+from updater import check_updates
 
 try:
     from version import SOUNIX_VERSION
 except ImportError:
-    SOUNIX_VERSION = "1.0.0"
+    SOUNIX_VERSION = "1.0.0-beta"
 
 
-# -----------------------------
-# Theme
-# -----------------------------
+# =========================================================
+# COLORS
+# =========================================================
 
 BACKGROUND = "#111827"
 PANEL = "#1f2937"
 PANEL_LIGHT = "#374151"
+ENTRY_BACKGROUND = "#0f172a"
+
 TEXT = "#f9fafb"
 MUTED_TEXT = "#cbd5e1"
 ACCENT = "#38bdf8"
 DANGER = "#ef4444"
-ENTRY_BACKGROUND = "#0f172a"
 
+
+# =========================================================
+# THEME
+# =========================================================
 
 def configure_theme():
     style = ttk.Style()
@@ -76,15 +82,22 @@ def configure_theme():
         "Status.TLabel",
         background=BACKGROUND,
         foreground=MUTED_TEXT,
-        font=("Sans", 10),
+        font=("Sans", 10, "bold"),
+    )
+
+    style.configure(
+        "Section.TLabel",
+        background=PANEL,
+        foreground=ACCENT,
+        font=("Sans", 12, "bold"),
     )
 
     style.configure(
         "TButton",
-        font=("Sans", 10),
-        padding=(10, 8),
         background=PANEL_LIGHT,
         foreground=TEXT,
+        font=("Sans", 10),
+        padding=(10, 8),
     )
 
     style.map(
@@ -101,10 +114,10 @@ def configure_theme():
 
     style.configure(
         "Danger.TButton",
-        font=("Sans", 10),
-        padding=(10, 8),
         background=DANGER,
         foreground=TEXT,
+        font=("Sans", 10),
+        padding=(10, 8),
     )
 
     style.map(
@@ -115,30 +128,10 @@ def configure_theme():
         ],
     )
 
-    style.configure(
-        "TNotebook",
-        background=BACKGROUND,
-        borderwidth=0,
-    )
 
-    style.configure(
-        "TNotebook.Tab",
-        background=PANEL,
-        foreground=TEXT,
-        padding=(14, 8),
-        font=("Sans", 10, "bold"),
-    )
-
-    style.map(
-        "TNotebook.Tab",
-        background=[("selected", ACCENT)],
-        foreground=[("selected", BACKGROUND)],
-    )
-
-
-# -----------------------------
-# Output helpers
-# -----------------------------
+# =========================================================
+# OUTPUT
+# =========================================================
 
 def write_output(text):
     output_box.configure(state="normal")
@@ -152,6 +145,10 @@ def clear_output():
     output_box.delete("1.0", tk.END)
     output_box.configure(state="disabled")
 
+    status_var.set("Ready")
+    system_status_var.set("Ready")
+    security_status_var.set("Not checked")
+
 
 def set_busy(is_busy):
     if is_busy:
@@ -163,12 +160,58 @@ def set_busy(is_busy):
         command_entry.focus_set()
 
 
-# -----------------------------
-# Command handling
-# -----------------------------
+# =========================================================
+# COMMAND HANDLING
+# =========================================================
 
-def finish_command(answer):
-    write_output(f"Sounix: {answer}\n\n")
+current_command = ""
+
+
+def update_dashboard_status(command, answer):
+    command = command.lower()
+    answer_text = str(answer).lower()
+
+    if command in {"system", "system info", "status", "doctor", "distro"}:
+        system_status_var.set("Checked")
+
+    if command in {
+        "security",
+        "health",
+        "system health",
+        "security health",
+        "health report",
+        "firewall",
+        "firewall status",
+        "vpn",
+        "vpn status",
+        "tailscale",
+        "tailscale status",
+        "network scan",
+    }:
+        security_status_var.set("Checked")
+
+    if command == "check updates":
+        if "up to date" in answer_text:
+            updates_status_var.set("Up to date")
+        elif "update is available" in answer_text:
+            updates_status_var.set("Update available")
+        elif "could not" in answer_text or "error" in answer_text:
+            updates_status_var.set("Check failed")
+        else:
+            updates_status_var.set("Checked")
+
+    if command == "update sounix":
+        if "successfully" in answer_text:
+            updates_status_var.set("Updated")
+        elif "already up to date" in answer_text:
+            updates_status_var.set("Up to date")
+        else:
+            updates_status_var.set("Update incomplete")
+
+
+def finish_command(command, answer):
+    write_output(f"{answer}\n\n")
+    update_dashboard_status(command, answer)
     set_busy(False)
 
 
@@ -180,12 +223,25 @@ def command_failed(error):
 def process_command(command):
     try:
         answer = respond(command)
-        root.after(0, finish_command, answer)
+
+        root.after(
+            0,
+            finish_command,
+            command,
+            answer,
+        )
+
     except Exception as error:
-        root.after(0, command_failed, error)
+        root.after(
+            0,
+            command_failed,
+            error,
+        )
 
 
 def run_command():
+    global current_command
+
     command = command_entry.get().strip()
 
     if not command:
@@ -193,8 +249,11 @@ def run_command():
         command_entry.focus_set()
         return
 
+    current_command = command
+
     command_entry.delete(0, tk.END)
     write_output(f"You: {command}\n")
+
     set_busy(True)
 
     worker = threading.Thread(
@@ -217,42 +276,81 @@ def use_command(command):
     if command == "about":
         open_about()
         return
-    if command in {"about", "who are you", "creator"}:
-        return (
-            "Hello, I'm Sounix.\n\n"
-            "I'm a cybersecurity-focused, multipurpose assistant created to help "
-            "protect, manage, and better understand your computer.\n\n"
-            "I may not be like ChatGPT, Claude, or other AI assistants, "
-            "but I have my own purpose.\n\n"
-            "I was built using Python, with Arch Linux as my original "
-            "development environment.\n\n"
-            "I'm still under active development, so new features will continue "
-            "to be added over time.\n\n"
-            "Created by AdmiralChimken.\n\n"
-            "GitHub:\n"
-            "https://github.com/admiral-chimken/sounix"
-        )
+
     command_entry.delete(0, tk.END)
     command_entry.insert(0, command)
     run_command()
 
 
-# -----------------------------
-# Settings window
-# -----------------------------
+# =========================================================
+# STARTUP UPDATE CHECK
+# =========================================================
+
+def show_startup_update_result(result):
+    result_text = str(result)
+
+    write_output(f"{result_text}\n\n")
+
+    if "up to date" in result_text.lower():
+        updates_status_var.set("Up to date")
+
+    elif "update is available" in result_text.lower():
+        updates_status_var.set("Update available")
+
+    elif "could not" in result_text.lower():
+        updates_status_var.set("Check failed")
+
+    else:
+        updates_status_var.set("Checked")
+
+    status_var.set("Ready")
+
+
+def check_updates_on_startup():
+    status_var.set("Checking for updates...")
+    updates_status_var.set("Checking...")
+
+    def worker():
+        try:
+            result = check_updates()
+
+            root.after(
+                0,
+                show_startup_update_result,
+                result,
+            )
+
+        except Exception as error:
+            root.after(
+                0,
+                show_startup_update_result,
+                f"Sounix update check failed: {error}",
+            )
+
+    threading.Thread(
+        target=worker,
+        daemon=True,
+    ).start()
+
+
+# =========================================================
+# SETTINGS WINDOW
+# =========================================================
 
 def open_settings():
     window = tk.Toplevel(root)
+
     window.title("Sounix Settings")
     window.geometry("700x520")
     window.configure(background=BACKGROUND)
 
-    title = ttk.Label(
+    ttk.Label(
         window,
         text="Sounix Settings",
         style="Header.TLabel",
+    ).pack(
+        pady=(16, 8),
     )
-    title.pack(pady=(16, 8))
 
     output = scrolledtext.ScrolledText(
         window,
@@ -265,6 +363,7 @@ def open_settings():
         padx=12,
         pady=12,
     )
+
     output.pack(
         fill="both",
         expand=True,
@@ -277,58 +376,72 @@ def open_settings():
     except Exception as error:
         report = f"Sounix could not load settings: {error}"
 
-    output.insert(tk.END, report)
-    output.configure(state="disabled")
+    output.insert(
+        tk.END,
+        report,
+    )
+
+    output.configure(
+        state="disabled",
+    )
 
 
-# -----------------------------
-# About window
-# -----------------------------
+# =========================================================
+# ABOUT WINDOW
+# =========================================================
 
 def open_about():
     window = tk.Toplevel(root)
+
     window.title("About Sounix")
-    window.geometry("520x430")
+    window.geometry("600x550")
     window.configure(background=BACKGROUND)
-    window.resizable(False, False)
 
     ttk.Label(
         window,
         text="◉ SOUNIX",
         style="Header.TLabel",
-    ).pack(pady=(24, 4))
+    ).pack(
+        pady=(22, 4),
+    )
 
     ttk.Label(
         window,
-        text="Linux System Assistant",
+        text="Cybersecurity & Multipurpose Linux Assistant",
         style="Subtitle.TLabel",
-    ).pack(pady=(0, 18))
+    ).pack(
+        pady=(0, 18),
+    )
 
     about_text = (
         f"Version: {SOUNIX_VERSION}\n\n"
-        "Sounix is a Linux assistant built with Python and Tkinter.\n\n"
-        "Current features include:\n"
-        "• System information and diagnostics\n"
-        "• Firewall controls with safety confirmations\n"
-        "• VPN and Tailscale status\n"
-        "• File management\n"
-        "• Memory and calculator tools\n"
-        "• Network and security tools\n"
-        "• Software installation support\n"
-        "• Update checking\n\n"
-        "Status: Active development"
+        "Hello. I'm Sounix.\n\n"
+        "I'm a cybersecurity-focused, multipurpose assistant created "
+        "to help users protect, manage, and better understand their "
+        "computer systems.\n\n"
+        "I may not be like ChatGPT, Claude, or other large AI systems, "
+        "but I am an assistant with my own purpose.\n\n"
+        "I was built using Python, with Arch Linux as my original "
+        "development environment.\n\n"
+        "Sounix is still under active development. New features, "
+        "improvements, and fixes may take time.\n\n"
+        "Created and developed by AdmiralChimken.\n\n"
+        "Feedback, bug reports, and suggestions:\n"
+        "https://github.com/admiral-chimken/sounix"
     )
 
-    label = tk.Label(
+    about_label = tk.Label(
         window,
         text=about_text,
         background=BACKGROUND,
         foreground=TEXT,
         justify="left",
         anchor="nw",
+        wraplength=530,
         font=("Sans", 11),
     )
-    label.pack(
+
+    about_label.pack(
         fill="both",
         expand=True,
         padx=30,
@@ -336,12 +449,13 @@ def open_about():
     )
 
 
-# -----------------------------
-# File Manager window
-# -----------------------------
+# =========================================================
+# FILE MANAGER WINDOW
+# =========================================================
 
 def open_files():
     window = tk.Toplevel(root)
+
     window.title("Sounix File Manager")
     window.geometry("780x620")
     window.configure(background=BACKGROUND)
@@ -350,20 +464,30 @@ def open_files():
         window,
         text="File Manager",
         style="Header.TLabel",
-    ).pack(pady=(14, 6))
+    ).pack(
+        pady=(14, 6),
+    )
 
-    form = ttk.Frame(window, style="Panel.TFrame")
+    form = ttk.Frame(
+        window,
+        style="Panel.TFrame",
+    )
+
     form.pack(
         fill="x",
         padx=16,
         pady=8,
     )
 
-    ttk.Label(
+    source_label = tk.Label(
         form,
         text="Source or path:",
         background=PANEL,
-    ).grid(
+        foreground=TEXT,
+        font=("Sans", 10),
+    )
+
+    source_label.grid(
         row=0,
         column=0,
         sticky="w",
@@ -379,6 +503,7 @@ def open_files():
         insertbackground=TEXT,
         relief="flat",
     )
+
     path_entry.grid(
         row=1,
         column=0,
@@ -386,13 +511,21 @@ def open_files():
         padx=10,
         pady=(0, 10),
     )
-    path_entry.insert(0, "~")
 
-    ttk.Label(
+    path_entry.insert(
+        0,
+        "~",
+    )
+
+    destination_label = tk.Label(
         form,
         text="Destination or new name:",
         background=PANEL,
-    ).grid(
+        foreground=TEXT,
+        font=("Sans", 10),
+    )
+
+    destination_label.grid(
         row=0,
         column=1,
         sticky="w",
@@ -408,6 +541,7 @@ def open_files():
         insertbackground=TEXT,
         relief="flat",
     )
+
     destination_entry.grid(
         row=1,
         column=1,
@@ -416,8 +550,15 @@ def open_files():
         pady=(0, 10),
     )
 
-    form.grid_columnconfigure(0, weight=1)
-    form.grid_columnconfigure(1, weight=1)
+    form.grid_columnconfigure(
+        0,
+        weight=1,
+    )
+
+    form.grid_columnconfigure(
+        1,
+        weight=1,
+    )
 
     file_output = scrolledtext.ScrolledText(
         window,
@@ -430,6 +571,7 @@ def open_files():
         padx=10,
         pady=10,
     )
+
     file_output.pack(
         fill="both",
         expand=True,
@@ -438,9 +580,19 @@ def open_files():
     )
 
     def show_result(result):
-        file_output.delete("1.0", tk.END)
-        file_output.insert(tk.END, str(result))
-        file_output.see(tk.END)
+        file_output.delete(
+            "1.0",
+            tk.END,
+        )
+
+        file_output.insert(
+            tk.END,
+            str(result),
+        )
+
+        file_output.see(
+            tk.END,
+        )
 
     def source():
         return path_entry.get().strip()
@@ -449,36 +601,61 @@ def open_files():
         return destination_entry.get().strip()
 
     def list_action():
-        show_result(list_files(source()))
+        show_result(
+            list_files(source())
+        )
 
     def folder_action():
-        show_result(make_folder(source()))
+        show_result(
+            make_folder(source())
+        )
 
     def copy_action():
         if not source() or not destination():
-            show_result("Sounix: Enter both a source and destination.")
+            show_result(
+                "Sounix: Enter both a source and destination."
+            )
             return
-        show_result(copy_file(source(), destination()))
+
+        show_result(
+            copy_file(source(), destination())
+        )
 
     def move_action():
         if not source() or not destination():
-            show_result("Sounix: Enter both a source and destination.")
+            show_result(
+                "Sounix: Enter both a source and destination."
+            )
             return
-        show_result(move_file(source(), destination()))
+
+        show_result(
+            move_file(source(), destination())
+        )
 
     def rename_action():
         if not source() or not destination():
-            show_result("Sounix: Enter a source and new name.")
+            show_result(
+                "Sounix: Enter a source and new name."
+            )
             return
-        show_result(rename_file(source(), destination()))
+
+        show_result(
+            rename_file(source(), destination())
+        )
 
     def delete_action():
         if not source():
-            show_result("Sounix: Enter a file or folder path.")
+            show_result(
+                "Sounix: Enter a file or folder path."
+            )
             return
-        show_result(delete_file(source()))
+
+        show_result(
+            delete_file(source())
+        )
 
     controls = ttk.Frame(window)
+
     controls.pack(
         fill="x",
         padx=16,
@@ -501,6 +678,7 @@ def open_files():
             command=callback,
             style=style_name,
         )
+
         button.grid(
             row=index // 3,
             column=index % 3,
@@ -510,47 +688,113 @@ def open_files():
         )
 
     for column in range(3):
-        controls.grid_columnconfigure(column, weight=1)
-def check_updates_on_startup():
-    status_var.set("Checking for updates...")
-
-    def worker():
-        try:
-            result = check_updates()
-            root.after(0, show_startup_update_result, result)
-        except Exception as error:
-            root.after(
-                0,
-                show_startup_update_result,
-                f"Sounix update check failed: {error}",
-            )
-
-    threading.Thread(
-        target=worker,
-        daemon=True,
-    ).start()
+        controls.grid_columnconfigure(
+            column,
+            weight=1,
+        )
 
 
-def show_startup_update_result(result):
-    write_output(f"{result}\n\n")
-    status_var.set("Ready")
+# =========================================================
+# DASHBOARD SECTION CREATOR
+# =========================================================
 
-# -----------------------------
-# Main window
-# -----------------------------
+def create_section(parent, title, buttons):
+    section = ttk.Frame(
+        parent,
+        style="Panel.TFrame",
+    )
+
+    section.pack(
+        fill="x",
+        pady=6,
+    )
+
+    ttk.Label(
+        section,
+        text=title,
+        style="Section.TLabel",
+    ).grid(
+        row=0,
+        column=0,
+        columnspan=4,
+        sticky="w",
+        padx=12,
+        pady=(10, 6),
+    )
+
+    for index, item in enumerate(buttons):
+        label = item[0]
+        command = item[1]
+
+        if len(item) >= 3:
+            style_name = item[2]
+        else:
+            style_name = "TButton"
+
+        button = ttk.Button(
+            section,
+            text=label,
+            command=lambda value=command: use_command(value),
+            style=style_name,
+        )
+
+        button.grid(
+            row=(index // 4) + 1,
+            column=index % 4,
+            sticky="ew",
+            padx=7,
+            pady=7,
+        )
+
+    for column in range(4):
+        section.grid_columnconfigure(
+            column,
+            weight=1,
+        )
+
+
+# =========================================================
+# MAIN WINDOW
+# =========================================================
 
 root = tk.Tk()
-root.title(f"Sounix {SOUNIX_VERSION}")
-root.geometry("980x760")
-root.minsize(760, 620)
-root.configure(background=BACKGROUND)
+
+root.title(
+    f"Sounix {SOUNIX_VERSION}"
+)
+
+root.geometry(
+    "1000x820"
+)
+
+root.minsize(
+    800,
+    650,
+)
+
+root.configure(
+    background=BACKGROUND,
+)
 
 configure_theme()
 
-root.grid_rowconfigure(3, weight=1)
-root.grid_columnconfigure(0, weight=1)
+root.grid_columnconfigure(
+    0,
+    weight=1,
+)
+
+root.grid_rowconfigure(
+    2,
+    weight=1,
+)
+
+
+# =========================================================
+# HEADER
+# =========================================================
 
 header = ttk.Frame(root)
+
 header.grid(
     row=0,
     column=0,
@@ -558,7 +802,11 @@ header.grid(
     padx=18,
     pady=(14, 6),
 )
-header.grid_columnconfigure(0, weight=1)
+
+header.grid_columnconfigure(
+    0,
+    weight=1,
+)
 
 ttk.Label(
     header,
@@ -572,7 +820,7 @@ ttk.Label(
 
 ttk.Label(
     header,
-    text="Linux System Assistant",
+    text="Linux Cybersecurity & System Assistant",
     style="Subtitle.TLabel",
 ).grid(
     row=1,
@@ -580,7 +828,9 @@ ttk.Label(
     sticky="w",
 )
 
-status_var = tk.StringVar(value="Ready")
+status_var = tk.StringVar(
+    value="Ready"
+)
 
 ttk.Label(
     header,
@@ -592,12 +842,18 @@ ttk.Label(
     rowspan=2,
     sticky="e",
 )
-dashboard_frame = ttk.Frame(
+
+
+# =========================================================
+# MAIN DASHBOARD
+# =========================================================
+
+dashboard_container = tk.Frame(
     root,
-    style="Panel.TFrame",
+    background=BACKGROUND,
 )
 
-dashboard_frame.grid(
+dashboard_container.grid(
     row=1,
     column=0,
     sticky="ew",
@@ -605,240 +861,148 @@ dashboard_frame.grid(
     pady=(4, 6),
 )
 
-for column in range(3):
-    dashboard_frame.grid_columnconfigure(column, weight=1)
+system_status_var = tk.StringVar(
+    value="Ready"
+)
 
-system_card_status = tk.StringVar(value="Ready")
-security_card_status = tk.StringVar(value="Not checked")
-updates_card_status = tk.StringVar(value="Checking...")
+security_status_var = tk.StringVar(
+    value="Not checked"
+)
 
-def create_dashboard_card(
-    column,
-    title,
-    description,
-    status_variable,
-    button_text,
-    command,
-):
-    card = tk.Frame(
-        dashboard_frame,
+updates_status_var = tk.StringVar(
+    value="Checking..."
+)
+
+
+status_panel = ttk.Frame(
+    dashboard_container,
+    style="Panel.TFrame",
+)
+
+status_panel.pack(
+    fill="x",
+    pady=(0, 6),
+)
+
+status_items = [
+    ("System", system_status_var),
+    ("Security", security_status_var),
+    ("Updates", updates_status_var),
+]
+
+for index, (label_text, variable) in enumerate(status_items):
+    item = tk.Frame(
+        status_panel,
         background=PANEL,
-        highlightbackground=PANEL_LIGHT,
-        highlightthickness=1,
     )
 
-    card.grid(
+    item.grid(
         row=0,
-        column=column,
-        sticky="nsew",
-        padx=6,
-        pady=6,
+        column=index,
+        sticky="ew",
+        padx=8,
+        pady=8,
     )
 
-    title_label = tk.Label(
-        card,
-        text=title,
+    status_panel.grid_columnconfigure(
+        index,
+        weight=1,
+    )
+
+    tk.Label(
+        item,
+        text=label_text,
         background=PANEL,
         foreground=ACCENT,
-        font=("Sans", 13, "bold"),
-    )
+        font=("Sans", 11, "bold"),
+    ).pack()
 
-    title_label.pack(
-        anchor="w",
-        padx=12,
-        pady=(10, 3),
-    )
-
-    description_label = tk.Label(
-        card,
-        text=description,
-        background=PANEL,
-        foreground=MUTED_TEXT,
-        font=("Sans", 10),
-        justify="left",
-        wraplength=240,
-    )
-
-    description_label.pack(
-        anchor="w",
-        padx=12,
-        pady=(0, 8),
-    )
-
-    status_label = tk.Label(
-        card,
-        textvariable=status_variable,
+    tk.Label(
+        item,
+        textvariable=variable,
         background=PANEL,
         foreground=TEXT,
-        font=("Sans", 10, "bold"),
-    )
-
-    status_label.pack(
-        anchor="w",
-        padx=12,
-        pady=(0, 10),
-    )
-
-    action_button = ttk.Button(
-        card,
-        text=button_text,
-        command=lambda: use_command(command),
-    )
-
-    action_button.pack(
-        fill="x",
-        padx=12,
-        pady=(0, 12),
-    )
-    
-
-    card.grid(
-        row=0,
-        column=column,
-        sticky="nsew",
-        padx=6,
-        pady=6,
-    )
-
-    title_label = tk.Label(
-        card,
-        text=title,
-        background=PANEL,
-        foreground=ACCENT,
-        font=("Sans", 13, "bold"),
-    )
-
-    title_label.pack(
-        anchor="w",
-        padx=12,
-        pady=(10, 3),
-    )
-
-    description_label = tk.Label(
-        card,
-        text=description,
-        background=PANEL,
-        foreground=MUTED_TEXT,
         font=("Sans", 10),
-        justify="left",
-    )
-
-    description_label.pack(
-        anchor="w",
-        padx=12,
-        pady=(0, 10),
-    )
-
-    action_button = ttk.Button(
-        card,
-        text=button_text,
-        command=lambda: use_command(command),
-    )
-
-    action_button.pack(
-        fill="x",
-        padx=12,
-        pady=(0, 12),
+    ).pack(
+        pady=(2, 0),
     )
 
 
-create_dashboard_card(
-    0,
-    "System",
-    "View system information and diagnostics.",
-    system_card_status,
-    "System Info",
-    "system",
-)
-
-create_dashboard_card(
-    1,
-    "Security",
-    "Review firewall, VPN, and security tools.",
-    security_card_status,
-    "Run Health Check",
-    "health",
-)
-
-create_dashboard_card(
-    2,
-    "Updates",
-    "Check GitHub for the newest Sounix version.",
-    updates_card_status,
-    "Check Updates",
-    "check updates",
-)
-  
-notebook = ttk.Notebook(root)
-notebook.grid(
-    row=2,
-    column=0,
-    sticky="ew",
-    padx=18,
-    pady=6,
-)
-
-sections = {
-    "System": [
-        ("System Info", "system", "TButton"),
-        ("Doctor", "doctor", "TButton"),
-        ("Distro", "distro", "TButton"),
-        ("Settings", "settings", "TButton"),
-        ("Check Updates", "check updates", "TButton"),
+create_section(
+    dashboard_container,
+    "SYSTEM",
+    [
+        ("System Info", "system"),
+        ("Doctor", "doctor"),
+        ("Distro", "distro"),
+        ("Settings", "settings"),
     ],
-    "Security": [
-        ("Firewall Status", "firewall status", "TButton"),
-        ("Enable Firewall", "enable firewall", "TButton"),
+)
+
+create_section(
+    dashboard_container,
+    "SECURITY",
+    [
+        ("Firewall Status", "firewall status"),
+        ("Enable Firewall", "enable firewall"),
         ("Disable Firewall", "disable firewall", "Danger.TButton"),
-        ("VPN Status", "vpn status", "TButton"),
-        ("Tailscale", "tailscale status", "TButton"),
-        ("Cyber Center", "security", "TButton"),
-        ("Network Scan", "network scan", "TButton"),
+        ("Health Check", "health"),
+        ("VPN Status", "vpn status"),
+        ("Tailscale", "tailscale status"),
+        ("Network Scan", "network scan"),
+        ("Check Updates", "check updates"),
     ],
-    "Files": [
-        ("File Manager", "files", "TButton"),
-        ("List Home", "list ~", "TButton"),
+)
+
+create_section(
+    dashboard_container,
+    "FILES",
+    [
+        ("File Manager", "files"),
+        ("List Home", "list ~"),
     ],
-    "Assistant": [
-        ("Memory", "memories", "TButton"),
-        ("Travel Mode", "travel mode", "TButton"),
-        ("Help", "help", "TButton"),
-        ("About", "about", "TButton"),
+)
+
+create_section(
+    dashboard_container,
+    "ASSISTANT",
+    [
+        ("Memory", "memories"),
+        ("Travel Mode", "travel mode"),
+        ("Help", "help"),
+        ("About", "about"),
+        ("News", "news"),
+        ("Version", "version"),
     ],
-}
+)
 
-for section_name, buttons in sections.items():
-    tab = ttk.Frame(notebook, style="Panel.TFrame")
-    notebook.add(tab, text=section_name)
 
-    for index, (label, command, style_name) in enumerate(buttons):
-        button = ttk.Button(
-            tab,
-            text=label,
-            command=lambda value=command: use_command(value),
-            style=style_name,
-        )
-        button.grid(
-            row=index // 4,
-            column=index % 4,
-            sticky="ew",
-            padx=7,
-            pady=8,
-        )
+# =========================================================
+# OUTPUT PANEL
+# =========================================================
 
-    for column in range(4):
-        tab.grid_columnconfigure(column, weight=1)
+output_frame = ttk.Frame(
+    root,
+    style="Panel.TFrame",
+)
 
-output_frame = ttk.Frame(root, style="Panel.TFrame")
 output_frame.grid(
-    row=3,
+    row=2,
     column=0,
     sticky="nsew",
     padx=18,
     pady=8,
 )
-output_frame.grid_rowconfigure(0, weight=1)
-output_frame.grid_columnconfigure(0, weight=1)
+
+output_frame.grid_rowconfigure(
+    0,
+    weight=1,
+)
+
+output_frame.grid_columnconfigure(
+    0,
+    weight=1,
+)
 
 output_box = scrolledtext.ScrolledText(
     output_frame,
@@ -851,6 +1015,7 @@ output_box = scrolledtext.ScrolledText(
     padx=12,
     pady=12,
 )
+
 output_box.grid(
     row=0,
     column=0,
@@ -858,17 +1023,30 @@ output_box.grid(
     padx=8,
     pady=8,
 )
-output_box.configure(state="disabled")
+
+output_box.configure(
+    state="disabled",
+)
+
+
+# =========================================================
+# COMMAND BAR
+# =========================================================
 
 command_frame = ttk.Frame(root)
+
 command_frame.grid(
-    row=4,
+    row=3,
     column=0,
     sticky="ew",
     padx=18,
     pady=(6, 16),
 )
-command_frame.grid_columnconfigure(0, weight=1)
+
+command_frame.grid_columnconfigure(
+    0,
+    weight=1,
+)
 
 command_entry = tk.Entry(
     command_frame,
@@ -878,6 +1056,7 @@ command_entry = tk.Entry(
     insertbackground=TEXT,
     relief="flat",
 )
+
 command_entry.grid(
     row=0,
     column=0,
@@ -891,6 +1070,7 @@ run_button = ttk.Button(
     text="Run",
     command=run_command,
 )
+
 run_button.grid(
     row=0,
     column=1,
@@ -902,6 +1082,7 @@ clear_button = ttk.Button(
     text="Clear",
     command=clear_output,
 )
+
 clear_button.grid(
     row=0,
     column=2,
@@ -912,13 +1093,23 @@ command_entry.bind(
     lambda event: run_command(),
 )
 
+
+# =========================================================
+# STARTUP
+# =========================================================
+
 write_output(
-    f"Sounix {SOUNIX_VERSION} ready.\n"
+    f"Hello. I'm Sounix {SOUNIX_VERSION}.\n"
+    "I'm a cybersecurity-focused, multipurpose Linux assistant.\n"
+    "I'm still under active development by AdmiralChimken.\n\n"
     "Enter a command below or choose a dashboard action.\n\n"
 )
 
 command_entry.focus_set()
 
-root.after(1000, check_updates_on_startup)
+root.after(
+    1000,
+    check_updates_on_startup,
+)
 
 root.mainloop()
