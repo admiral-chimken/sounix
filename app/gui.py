@@ -1,7 +1,7 @@
 import threading
 import tkinter as tk
 from tkinter import scrolledtext, ttk
-
+from updater import check_updates
 from ai import respond
 from settings import settings_report
 from file_manager import (
@@ -511,7 +511,29 @@ def open_files():
 
     for column in range(3):
         controls.grid_columnconfigure(column, weight=1)
+def check_updates_on_startup():
+    status_var.set("Checking for updates...")
 
+    def worker():
+        try:
+            result = check_updates()
+            root.after(0, show_startup_update_result, result)
+        except Exception as error:
+            root.after(
+                0,
+                show_startup_update_result,
+                f"Sounix update check failed: {error}",
+            )
+
+    threading.Thread(
+        target=worker,
+        daemon=True,
+    ).start()
+
+
+def show_startup_update_result(result):
+    write_output(f"{result}\n\n")
+    status_var.set("Ready")
 
 # -----------------------------
 # Main window
@@ -720,5 +742,7 @@ write_output(
 )
 
 command_entry.focus_set()
+
+root.after(1000, check_updates_on_startup)
 
 root.mainloop()
