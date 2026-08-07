@@ -7,3 +7,4 @@ venv/
 app/ai.py.broken_backup
 *.tar.gz
 *.tar.gz
+*.before_dashboard_redesign
