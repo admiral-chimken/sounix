@@ -1,10 +1,20 @@
+import os
 import shlex
 import shutil
 import subprocess
 
 
+def _is_windows():
+    return os.name == "nt"
+
+
 def _install_instruction():
-    """Return the correct UFW installation command for this system."""
+    if _is_windows():
+        return (
+            "Windows Defender Firewall is built into Windows and "
+            "does not need to be installed."
+        )
+
     if shutil.which("pacman"):
         return "sudo pacman -S ufw"
 
@@ -30,7 +40,6 @@ def _ufw_missing_message():
 
 
 def _find_terminal():
-    """Find a supported graphical terminal emulator."""
     terminals = (
         "gnome-terminal",
         "konsole",
@@ -49,16 +58,12 @@ def _find_terminal():
 
 
 def _open_admin_terminal(ufw_arguments, action_name):
-    """
-    Open a terminal so sudo can safely request the user's password.
-
-    Sounix never reads or stores the password.
-    """
     terminal = _find_terminal()
 
     if terminal is None:
         command = "sudo ufw " + " ".join(
-            shlex.quote(argument) for argument in ufw_arguments
+            shlex.quote(argument)
+            for argument in ufw_arguments
         )
 
         return (
@@ -87,12 +92,6 @@ def _open_admin_terminal(ufw_arguments, action_name):
                 start_new_session=True,
             )
 
-        elif terminal == "konsole":
-            subprocess.Popen(
-                [terminal, "-e", "bash", "-lc", script],
-                start_new_session=True,
-            )
-
         else:
             subprocess.Popen(
                 [terminal, "-e", "bash", "-lc", script],
@@ -100,7 +99,10 @@ def _open_admin_terminal(ufw_arguments, action_name):
             )
 
     except OSError as error:
-        return f"Sounix: Could not open the administrator terminal: {error}"
+        return (
+            "Sounix: Could not open the administrator terminal: "
+            f"{error}"
+        )
 
     return (
         "Sounix: Opening a terminal for administrator permission.\n"
@@ -108,14 +110,123 @@ def _open_admin_terminal(ufw_arguments, action_name):
     )
 
 
+def _windows_firewall_status():
+    try:
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                (
+                    "Get-NetFirewallProfile | "
+                    "Select-Object Name, Enabled | "
+                    "Format-Table -AutoSize"
+                ),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+
+        if result.returncode == 0:
+            report = result.stdout.strip()
+
+            if report:
+                return (
+                    "Sounix Windows Firewall report:\n"
+                    f"{report}"
+                )
+
+        error = result.stderr.strip()
+
+        if not error:
+            error = "No firewall status information was returned."
+
+        return (
+            "Sounix: Windows Firewall status check failed.\n"
+            f"{error}"
+        )
+
+    except subprocess.TimeoutExpired:
+        return "Sounix: The Windows Firewall status check timed out."
+
+    except OSError as error:
+        return (
+            "Sounix: Windows Firewall status check failed: "
+            f"{error}"
+        )
+
+
+def _windows_set_firewall(enabled):
+    state = "True" if enabled else "False"
+
+    command = (
+        "Start-Process powershell "
+        "-Verb RunAs "
+        "-ArgumentList "
+        f"'Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled {state}'"
+    )
+
+    try:
+        result = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                command,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+
+        if result.returncode == 0:
+            if enabled:
+                return (
+                    "Sounix: Windows Firewall enable request opened.\n"
+                    "Approve the administrator prompt to continue."
+                )
+
+            return (
+                "Sounix: Windows Firewall disable request opened.\n"
+                "Approve the administrator prompt to continue."
+            )
+
+        error = result.stderr.strip()
+
+        if not error:
+            error = result.stdout.strip()
+
+        return (
+            "Sounix: Windows Firewall command failed.\n"
+            f"{error}"
+        )
+
+    except subprocess.TimeoutExpired:
+        return "Sounix: The Windows Firewall command timed out."
+
+    except OSError as error:
+        return f"Sounix: Windows Firewall command failed: {error}"
+
+
 def firewall_status():
-    """Show UFW status, requesting administrator permission when needed."""
+    if _is_windows():
+        return _windows_firewall_status()
+
     if shutil.which("ufw") is None:
         return _ufw_missing_message()
 
     try:
         result = subprocess.run(
-            ["sudo", "-n", "ufw", "status", "verbose"],
+            [
+                "sudo",
+                "-n",
+                "ufw",
+                "status",
+                "verbose",
+            ],
             capture_output=True,
             text=True,
             timeout=10,
@@ -143,6 +254,9 @@ def firewall_status():
 
 
 def enable_firewall():
+    if _is_windows():
+        return _windows_set_firewall(True)
+
     if shutil.which("ufw") is None:
         return _ufw_missing_message()
 
@@ -153,6 +267,9 @@ def enable_firewall():
 
 
 def disable_firewall():
+    if _is_windows():
+        return _windows_set_firewall(False)
+
     if shutil.which("ufw") is None:
         return _ufw_missing_message()
 
