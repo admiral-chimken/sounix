@@ -48,12 +48,8 @@ def configure_theme():
         pass
 
     style.configure(
-    "TButton",
-    background=PANEL_LIGHT,
-    foreground=TEXT,
-    font=("Sans", 10),
-    padding=(8, 4),
-
+        "TFrame",
+        background=BACKGROUND,
     )
 
     style.configure(
@@ -65,7 +61,7 @@ def configure_theme():
         "TLabel",
         background=BACKGROUND,
         foreground=TEXT,
-        font=("Sans", 11),
+        font=("Sans", 10),
     )
 
     style.configure(
@@ -79,7 +75,7 @@ def configure_theme():
         "Subtitle.TLabel",
         background=BACKGROUND,
         foreground=MUTED_TEXT,
-        font=("Sans", 11),
+        font=("Sans", 10),
     )
 
     style.configure(
@@ -93,15 +89,15 @@ def configure_theme():
         "Section.TLabel",
         background=PANEL,
         foreground=ACCENT,
-        font=("Sans", 12, "bold"),
+        font=("Sans", 11, "bold"),
     )
 
     style.configure(
         "TButton",
         background=PANEL_LIGHT,
         foreground=TEXT,
-        font=("Sans", 10),
-        padding=(10, 8),
+        font=("Sans", 9),
+        padding=(6, 3),
     )
 
     style.map(
@@ -117,12 +113,11 @@ def configure_theme():
     )
 
     style.configure(
-    "Danger.TButton",
-    background=DANGER,
-    foreground=TEXT,
-    font=("Sans", 10),
-    padding=(8, 4),
-
+        "Danger.TButton",
+        background=DANGER,
+        foreground=TEXT,
+        font=("Sans", 9),
+        padding=(6, 3),
     )
 
     style.map(
@@ -169,14 +164,17 @@ def set_busy(is_busy):
 # COMMAND HANDLING
 # =========================================================
 
-current_command = ""
-
-
 def update_dashboard_status(command, answer):
     command = command.lower()
     answer_text = str(answer).lower()
 
-    if command in {"system", "system info", "status", "doctor", "distro"}:
+    if command in {
+        "system",
+        "system info",
+        "status",
+        "doctor",
+        "distro",
+    }:
         system_status_var.set("Checked")
 
     if command in {
@@ -245,8 +243,6 @@ def process_command(command):
 
 
 def run_command():
-    global current_command
-
     command = command_entry.get().strip()
 
     if not command:
@@ -254,10 +250,11 @@ def run_command():
         command_entry.focus_set()
         return
 
-    current_command = command
-
     command_entry.delete(0, tk.END)
-    write_output(f"You: {command}\n")
+
+    write_output(
+        f"You: {command}\n"
+    )
 
     set_busy(True)
 
@@ -266,6 +263,7 @@ def run_command():
         args=(command,),
         daemon=True,
     )
+
     worker.start()
 
 
@@ -284,6 +282,7 @@ def use_command(command):
 
     command_entry.delete(0, tk.END)
     command_entry.insert(0, command)
+
     run_command()
 
 
@@ -294,15 +293,19 @@ def use_command(command):
 def show_startup_update_result(result):
     result_text = str(result)
 
-    write_output(f"{result_text}\n\n")
+    write_output(
+        f"{result_text}\n\n"
+    )
 
-    if "up to date" in result_text.lower():
+    lower_result = result_text.lower()
+
+    if "up to date" in lower_result:
         updates_status_var.set("Up to date")
 
-    elif "update is available" in result_text.lower():
+    elif "update is available" in lower_result:
         updates_status_var.set("Update available")
 
-    elif "could not" in result_text.lower():
+    elif "could not" in lower_result or "error" in lower_result:
         updates_status_var.set("Check failed")
 
     else:
@@ -319,18 +322,16 @@ def check_updates_on_startup():
         try:
             result = check_updates()
 
-            root.after(
-                0,
-                show_startup_update_result,
-                result,
+        except Exception as error:
+            result = (
+                f"Sounix update check failed: {error}"
             )
 
-        except Exception as error:
-            root.after(
-                0,
-                show_startup_update_result,
-                f"Sounix update check failed: {error}",
-            )
+        root.after(
+            0,
+            show_startup_update_result,
+            result,
+        )
 
     threading.Thread(
         target=worker,
@@ -360,7 +361,7 @@ def open_settings():
     output = scrolledtext.ScrolledText(
         window,
         wrap=tk.WORD,
-        font=("Monospace", 11),
+        font=("Sans", 11),
         background=ENTRY_BACKGROUND,
         foreground=TEXT,
         insertbackground=TEXT,
@@ -378,8 +379,11 @@ def open_settings():
 
     try:
         report = settings_report()
+
     except Exception as error:
-        report = f"Sounix could not load settings: {error}"
+        report = (
+            f"Sounix could not load settings: {error}"
+        )
 
     output.insert(
         tk.END,
@@ -484,15 +488,13 @@ def open_files():
         pady=8,
     )
 
-    source_label = tk.Label(
+    tk.Label(
         form,
         text="Source or path:",
         background=PANEL,
         foreground=TEXT,
         font=("Sans", 10),
-    )
-
-    source_label.grid(
+    ).grid(
         row=0,
         column=0,
         sticky="w",
@@ -522,15 +524,13 @@ def open_files():
         "~",
     )
 
-    destination_label = tk.Label(
+    tk.Label(
         form,
         text="Destination or new name:",
         background=PANEL,
         foreground=TEXT,
         font=("Sans", 10),
-    )
-
-    destination_label.grid(
+    ).grid(
         row=0,
         column=1,
         sticky="w",
@@ -568,7 +568,7 @@ def open_files():
     file_output = scrolledtext.ScrolledText(
         window,
         wrap=tk.WORD,
-        font=("Monospace", 10),
+        font=("Sans", 10),
         background=ENTRY_BACKGROUND,
         foreground=TEXT,
         insertbackground=TEXT,
@@ -623,7 +623,10 @@ def open_files():
             return
 
         show_result(
-            copy_file(source(), destination())
+            copy_file(
+                source(),
+                destination(),
+            )
         )
 
     def move_action():
@@ -634,7 +637,10 @@ def open_files():
             return
 
         show_result(
-            move_file(source(), destination())
+            move_file(
+                source(),
+                destination(),
+            )
         )
 
     def rename_action():
@@ -645,7 +651,10 @@ def open_files():
             return
 
         show_result(
-            rename_file(source(), destination())
+            rename_file(
+                source(),
+                destination(),
+            )
         )
 
     def delete_action():
@@ -721,17 +730,16 @@ def create_section(parent, title, buttons):
     ).grid(
         row=0,
         column=0,
-        columnspan=4,
         sticky="w",
         padx=10,
         pady=(3, 2),
     )
 
-    screen_width = root.winfo_screenwidth()
+    available_width = root.winfo_width()
 
-    if screen_width < 900:
+    if available_width < 850:
         columns = 2
-    elif screen_width < 1200:
+    elif available_width < 1150:
         columns = 3
     else:
         columns = 4
@@ -764,9 +772,7 @@ def create_section(parent, title, buttons):
         section.grid_columnconfigure(
             column,
             weight=1,
-        )        
-
-    
+        )
 
 
 # =========================================================
@@ -785,8 +791,15 @@ screen_height = root.winfo_screenheight()
 window_width = int(screen_width * 0.90)
 window_height = int(screen_height * 0.90)
 
-window_width = max(800, min(window_width, 1400))
-window_height = max(600, min(window_height, 1000))
+window_width = max(
+    800,
+    min(window_width, 1400),
+)
+
+window_height = max(
+    600,
+    min(window_height, 1000),
+)
 
 root.geometry(
     f"{window_width}x{window_height}"
@@ -808,11 +821,11 @@ root.grid_columnconfigure(
     weight=1,
 )
 
+# Response area gets the flexible space.
 root.grid_rowconfigure(
     2,
-    weight=3,
-    minsize=300,
-
+    weight=1,
+    minsize=160,
 )
 
 
@@ -830,7 +843,7 @@ header.grid(
     column=0,
     sticky="ew",
     padx=18,
-    pady=(14, 6),
+    pady=(10, 5),
 )
 
 header.grid_columnconfigure(
@@ -872,16 +885,20 @@ ttk.Label(
     rowspan=2,
     sticky="e",
 )
+
+
 # =========================================================
 # MAIN DASHBOARD
 # =========================================================
 
-# Automatically choose a dashboard height based on the screen.
-screen_height = root.winfo_screenheight()
+dashboard_height = int(
+    screen_height * 0.35
+)
 
-dashboard_height = int(screen_height * 0.38)
-dashboard_height = max(220, min(dashboard_height, 360))
-
+dashboard_height = max(
+    210,
+    min(dashboard_height, 330),
+)
 
 dashboard_holder = tk.Frame(
     root,
@@ -893,14 +910,13 @@ dashboard_holder.grid(
     column=0,
     sticky="ew",
     padx=18,
-    pady=(4, 6),
+    pady=(2, 5),
 )
 
 dashboard_holder.grid_columnconfigure(
     0,
     weight=1,
 )
-
 
 dashboard_canvas = tk.Canvas(
     dashboard_holder,
@@ -919,7 +935,6 @@ dashboard_canvas.configure(
     yscrollcommand=dashboard_scrollbar.set,
 )
 
-
 dashboard_canvas.grid(
     row=0,
     column=0,
@@ -931,7 +946,6 @@ dashboard_scrollbar.grid(
     column=1,
     sticky="ns",
 )
-
 
 dashboard_container = tk.Frame(
     dashboard_canvas,
@@ -958,6 +972,16 @@ def resize_dashboard_content(event):
     )
 
 
+def dashboard_mousewheel(event):
+    if event.delta:
+        direction = -1 if event.delta > 0 else 1
+
+        dashboard_canvas.yview_scroll(
+            direction,
+            "units",
+        )
+
+
 dashboard_container.bind(
     "<Configure>",
     update_dashboard_scrollregion,
@@ -968,20 +992,15 @@ dashboard_canvas.bind(
     resize_dashboard_content,
 )
 
-
-# Mouse wheel support
-def dashboard_mousewheel(event):
-    dashboard_canvas.yview_scroll(
-        int(-1 * (event.delta / 120)),
-        "units",
-    )
-
-
 dashboard_canvas.bind(
     "<MouseWheel>",
     dashboard_mousewheel,
 )
 
+
+# =========================================================
+# DASHBOARD STATUS
+# =========================================================
 
 system_status_var = tk.StringVar(
     value="Ready"
@@ -995,7 +1014,6 @@ updates_status_var = tk.StringVar(
     value="Checking..."
 )
 
-
 status_panel = ttk.Frame(
     dashboard_container,
     style="Panel.TFrame",
@@ -1006,13 +1024,11 @@ status_panel.pack(
     pady=(0, 4),
 )
 
-
 status_items = [
     ("System", system_status_var),
     ("Security", security_status_var),
     ("Updates", updates_status_var),
 ]
-
 
 for index, (label_text, variable) in enumerate(status_items):
     item = tk.Frame(
@@ -1052,6 +1068,10 @@ for index, (label_text, variable) in enumerate(status_items):
     )
 
 
+# =========================================================
+# DASHBOARD BUTTONS
+# =========================================================
+
 create_section(
     dashboard_container,
     "SYSTEM",
@@ -1063,14 +1083,17 @@ create_section(
     ],
 )
 
-
 create_section(
     dashboard_container,
     "SECURITY",
     [
         ("Firewall Status", "firewall status"),
         ("Enable Firewall", "enable firewall"),
-        ("Disable Firewall", "disable firewall", "Danger.TButton"),
+        (
+            "Disable Firewall",
+            "disable firewall",
+            "Danger.TButton",
+        ),
         ("Health Check", "health"),
         ("VPN Status", "vpn status"),
         ("Tailscale", "tailscale status"),
@@ -1078,7 +1101,6 @@ create_section(
         ("Check Updates", "check updates"),
     ],
 )
-
 
 create_section(
     dashboard_container,
@@ -1090,21 +1112,21 @@ create_section(
 )
 
 create_section(
-       
-         dashboard_container,
+    dashboard_container,
     "ASSISTANT",
     [
         ("Memory", "memories"),
         ("Travel Mode", "travel mode"),
+        ("Translator", "help translator"),
         ("Help", "help"),
         ("About", "about"),
         ("News", "news"),
         ("Version", "version"),
-        ("Translator", "help translator"),
     ],
-
 )
-# ========================================================
+
+
+# =========================================================
 # OUTPUT PANEL
 # =========================================================
 
@@ -1118,7 +1140,7 @@ output_frame.grid(
     column=0,
     sticky="nsew",
     padx=18,
-    pady=8,
+    pady=(4, 4),
 )
 
 output_frame.grid_rowconfigure(
@@ -1134,7 +1156,7 @@ output_frame.grid_columnconfigure(
 output_box = scrolledtext.ScrolledText(
     output_frame,
     wrap=tk.WORD,
-    font=("Monospace", 11),
+    font=("Sans", 11),
     background=ENTRY_BACKGROUND,
     foreground=TEXT,
     insertbackground=TEXT,
@@ -1160,14 +1182,17 @@ output_box.configure(
 # COMMAND BAR
 # =========================================================
 
-command_frame = ttk.Frame(root)
+command_frame = tk.Frame(
+    root,
+    background=BACKGROUND,
+)
 
 command_frame.grid(
     row=3,
     column=0,
     sticky="ew",
     padx=18,
-    pady=(6, 16),
+    pady=(4, 10),
 )
 
 command_frame.grid_columnconfigure(
@@ -1188,7 +1213,7 @@ command_entry.grid(
     row=0,
     column=0,
     sticky="ew",
-    ipady=9,
+    ipady=7,
     padx=(0, 8),
 )
 
