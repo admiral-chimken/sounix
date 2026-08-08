@@ -1,0 +1,5 @@
+COMMAND = "plugin test"
+
+
+def run(args):
+    return "Sounix: Plugin system is working."

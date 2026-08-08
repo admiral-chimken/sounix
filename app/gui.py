@@ -1089,9 +1089,9 @@ create_section(
     ],
 )
 
-
 create_section(
-    dashboard_container,
+       
+         dashboard_container,
     "ASSISTANT",
     [
         ("Memory", "memories"),
@@ -1100,7 +1100,9 @@ create_section(
         ("About", "about"),
         ("News", "news"),
         ("Version", "version"),
+        ("Translator", "help translator"),
     ],
+
 )
 # ========================================================
 # OUTPUT PANEL

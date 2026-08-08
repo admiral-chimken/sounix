@@ -549,9 +549,30 @@ def respond(message):
             "  check updates\n"
             "  update sounix\n"
             "\n"
+            "Translator:\n"
+            "  translate <text> to <language>\n"
+            "  Example: translate hello to spanish\n"
+            "\n"           
             "  exit\n"
             "====================================="
         )
+  
+    if command in {
+        "help translate",
+        "help translator",
+        "translator help",
+    }:
+        return (
+            "========== TRANSLATOR HELP ==========\n\n"
+            "Use:\n"
+            "  translate <text> to <language>\n\n"
+            "Examples:\n"
+            "  translate hello to spanish\n"
+            "  translate good morning to french\n"
+            "  translate thank you to japanese\n\n"
+            "Translation requires an internet connection."
+        )
+
     # Plugins
     for plugin_command, plugin_run in plugins.items():
         if command == plugin_command:
