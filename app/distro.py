@@ -1,26 +1,45 @@
+import platform
+
+
 def get_distro():
+    system = platform.system()
+
+    if system == "Windows":
+        return (
+            f"Sounix: Windows {platform.release()} detected."
+        )
+
+    if system == "Darwin":
+        return (
+            f"Sounix: macOS {platform.mac_ver()[0]} detected."
+        )
+
+    if system != "Linux":
+        return f"Sounix: {system} detected."
+
     try:
         with open("/etc/os-release", "r") as file:
-            data = file.read()
+            data = file.read().lower()
 
-        if "ID=arch" in data:
+        if "id=arch" in data:
             return "Sounix: Arch Linux detected."
 
-        elif "ID=kali" in data:
+        if "id=kali" in data:
             return "Sounix: Kali Linux detected."
 
-        elif "ID=ubuntu" in data:
+        if "id=ubuntu" in data:
             return "Sounix: Ubuntu detected."
 
-        elif "ID=fedora" in data:
+        if "id=debian" in data:
+            return "Sounix: Debian detected."
+
+        if "id=fedora" in data:
             return "Sounix: Fedora detected."
 
-        else:
-            return "Sounix: Unknown Linux distribution."
+        if "id=opensuse" in data or "id=suse" in data:
+            return "Sounix: openSUSE detected."
 
-    except Exception:
-        return "Sounix: Unable to determine Linux distribution." 
-             
-    
+        return "Sounix: Unknown Linux distribution."
 
-    
+    except OSError:
+        return "Sounix: Unable to determine Linux distribution."
