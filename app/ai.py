@@ -508,6 +508,7 @@ def respond(message):
             "  doctor\n"
             "  vpn status\n"
             "  tailscale status\n"
+            "  /scan scanme.nmap.org\n"
             "  network scan\n"
             "\n"
             "System:\n"
