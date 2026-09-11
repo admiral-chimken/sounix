@@ -23,6 +23,8 @@ from ollama_client import get_installed_models, ask_ollama
 import sys
 from pathlib import Path
 from ai import respond
+from ollama_client import get_installed_models, ask_ollama
+from nmap_client import run_scan
 # =========================================================
 # COLORS
 # =========================================================
@@ -228,7 +230,11 @@ def command_failed(error):
 
 def process_command(command):
     try:
-        answer = respond(command)
+        if command.startswith("/scan "):
+            target = command[len("/scan "):].strip()
+            answer = run_scan(target)
+        else:
+            answer = respond(command)
 
         root.after(
             0,
@@ -268,7 +274,6 @@ def run_command():
     )
 
     worker.start()
-
 
 def use_command(command):
     if command == "settings":
@@ -1331,7 +1336,15 @@ class Sounix:
     def send_message(self):
         prompt = self.user_entry.get().strip()
         selected_model = self.model_var.get()
-
+        print(f"DEBUG prompt received: {repr(prompt)}")  # TEMP DEBUG LINE
+        # NMAP scan command
+        if prompt.startswith("/scan "):
+            target = prompt[len("/scan "):].strip()
+            self.append_chat("You", prompt)
+            self.user_entry.delete(0, tk.END)
+            threading.Thread(target=self._run_nmap_scan, args=(target,), daemon=True).start()
+            return
+        
         if not prompt:
             return
         if not selected_model or selected_model == "No models found":
@@ -1347,6 +1360,9 @@ class Sounix:
     def _get_ai_response(self, prompt, model):
         response = ask_ollama(prompt, model=model)
         self.root.after(0, self.append_chat, "Sounix", response)
+    def _run_nmap_scan(self, target):
+        result = run_scan(target)
+        self.root.after(0, self.append_chat, "Sounix", result)
 
 if __name__ == "__main__":
     root = tk.Tk()
@@ -1370,3 +1386,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 from app.ollama_client import get_installed_models, ask_ollama
+
+
+
+

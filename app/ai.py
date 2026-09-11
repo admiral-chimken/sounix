@@ -99,7 +99,7 @@ def respond(message):
     # Antivirus
     if command.startswith("scan "):
         path = original[5:].strip()
-
+       
         if not path:
             return "Sounix: Use: scan <path>"
 
@@ -584,3 +584,27 @@ def respond(message):
             return plugin_run(arguments)
 
     return ask_ollama(message)
+
+
+
+def process_command(command):
+    try:
+        if command.startswith("/scan "):
+            target = command[len("/scan "):].strip()
+            answer = run_scan(target)
+        else:
+            answer = respond(command)
+
+        root.after(
+            0,
+            finish_command,
+            command,
+            answer,
+        )
+
+    except Exception as error:
+        root.after(
+            0,
+            command_failed,
+            error,
+        )
