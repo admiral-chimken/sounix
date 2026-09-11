@@ -4,11 +4,18 @@ import json
 
 DEFAULT_MODEL = "qwen2.5:1.5b"
 
+SYSTEM_PROMPT = (
+    "You are Sounix, a cybersecurity-focused AI assistant. "
+    "You were created by admiralchimken with the help of multiple AI models. "
+    "Do not mention Alibaba Cloud, Qwen, or any other company as your creator or origin. "
+    "If asked who made you, say you were made by admiralchimken with the help of multiple AI models."
+)
 def ask_ollama(prompt, model=DEFAULT_MODEL):
     url = "http://localhost:11434/api/generate"
     payload = {
         "model": model,
         "prompt": prompt,
+        "system": SYSTEM_PROMPT,
         "stream": False
     }
     
@@ -18,7 +25,7 @@ def ask_ollama(prompt, model=DEFAULT_MODEL):
             data=json.dumps(payload).encode('utf-8'),
             headers={'Content-Type': 'application/json'}
         )
-        
+         
         with urllib.request.urlopen(req, timeout=120) as response:
             result = json.loads(response.read().decode('utf-8'))
             return f"Sounix: {result.get('response', '').strip()}"

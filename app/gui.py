@@ -17,9 +17,12 @@ from updater import check_updates
 try:
     from version import SOUNIX_VERSION
 except ImportError:
-    SOUNIX_VERSION = "1.0.0-beta"
-
-
+    SOUNIX_VERSION = "1.3.0-alpha"
+import threading
+from ollama_client import get_installed_models, ask_ollama
+import sys
+from pathlib import Path
+from ai import respond
 # =========================================================
 # COLORS
 # =========================================================
@@ -1265,3 +1268,105 @@ root.after(
 )
 
 root.mainloop()
+
+
+# =========================================================
+# OLLAMA VERSION SELECT
+# =========================================================
+class Sounix:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Sounix - Local AI Chat")
+        self.root.geometry("600x500")
+
+        # MODEL SELECT + REFRESH
+        top_frame = tk.Frame(self.root)
+        top_frame.pack(fill=tk.X, padx=10, pady=5)
+        tk.Label(top_frame, text="Model:").pack(side=tk.LEFT, padx=(0, 5))
+        self.model_var = tk.StringVar()
+        self.model_dropdown = ttk.Combobox(
+            top_frame, textvariable=self.model_var, state="readonly")
+        self.model_dropdown.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        refresh_btn = tk.Button(
+            top_frame,
+            text="Refresh",
+            command=self.load_models)
+        refresh_btn.pack(side=tk.RIGHT)
+        # Chat Display
+        self.chat_display = tk.Text(self.root, state="disabled", wrap=tk.WORD)
+        self.chat_display.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Input Frame
+        input_frame = tk.Frame(self.root)
+        input_frame.pack(fill=tk.X, padx=10, pady=5)
+
+        self.user_entry = tk.Entry(input_frame)
+        self.user_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        self.user_entry.bind("<Return>", lambda e: self.send_message())
+
+        send_btn = tk.Button(input_frame, text="Send", command=self.send_message)
+        send_btn.pack(side=tk.RIGHT)
+        # Load installed models on startup
+        self.load_models()
+
+    def load_models(self):
+        """Fetch models from Ollama and update the dropdown."""
+        models = get_installed_models()
+        if models:
+            self.model_dropdown["values"] = models
+            if self.model_var.get() not in models:
+                self.model_dropdown.current(0) # select first model by default
+        else:
+            self.model_dropdown["values"] = []
+            self.model_var.set("No models found")
+
+    def append_chat(self, sender, text):
+        """Helper to append text to the chat display."""
+        self.chat_display.config(state="normal")
+        self.chat_display.insert(tk.END, f"{sender}: {text}\n\n")
+        self.chat_display.config(state="disabled")
+        self.chat_display.see(tk.END)
+
+    def send_message(self):
+        prompt = self.user_entry.get().strip()
+        selected_model = self.model_var.get()
+
+        if not prompt:
+            return
+        if not selected_model or selected_model == "No models found":
+            messagebox.showwarning("Warning", "Please select a valid Ollama model.")
+            return
+
+        self.append_chat("You", prompt)
+        self.user_entry.delete(0, tk.END)
+
+        # Run query in background thread to avoid freezing GUI
+        threading.Thread(target=self._get_ai_response, args=(prompt, selected_model), daemon=True).start()
+
+    def _get_ai_response(self, prompt, model):
+        response = ask_ollama(prompt, model=model)
+        self.root.after(0, self.append_chat, "Sounix", response)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = Sounix(root)
+    root.mainloop()
+
+
+
+
+
+
+
+
+
+# Add the project root directory to sys.path
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+import tkinter as tk
+from tkinter import ttk, messagebox
+import threading
+from app.ollama_client import get_installed_models, ask_ollama
