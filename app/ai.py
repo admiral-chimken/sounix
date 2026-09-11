@@ -1,3 +1,4 @@
+from ollama_client import ask_ollama
 from antivirus import scan_path
 from firewall import firewall_status, enable_firewall, disable_firewall
 from system_info import system_report
@@ -582,4 +583,4 @@ def respond(message):
             arguments = original[len(plugin_command):].strip()
             return plugin_run(arguments)
 
-    return "Sounix: I don't understand that command yet."
+    return ask_ollama(message)
