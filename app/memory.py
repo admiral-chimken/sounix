@@ -39,7 +39,3 @@ def forget(key):
 
 def list_memories():
     return load_memory()
-
-
-
-

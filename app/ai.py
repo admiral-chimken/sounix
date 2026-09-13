@@ -11,6 +11,9 @@ from vpn_check import vpn_status
 from software_manager import install_package, search_packages
 from doctor import doctor
 from network_scan import network_scan
+from predictive_analytics import run_predictive_analytics
+from education import explain_topic
+from threat_detection import set_baseline, scan_for_threats
 from power_control import (
     shutdown_computer,
     restart_computer,
@@ -166,6 +169,32 @@ def respond(message):
     # Network
     if command == "network scan":
         return network_scan()
+
+    # Predictive Analytics
+    if command == "predictive analytics":
+        return run_predictive_analytics()
+
+    # Education
+    if command == "list saved items":
+        items = list_memories()
+        if not items:
+            return "Sounix: No saved items yet."
+        lines = [f"- {k}: {'*' * len(str(v))}" for k, v in items.items()]
+        return "Sounix: Saved items (values hidden):\n" + "\n".join(lines)
+
+    if command == "help reveal":
+        return "Sounix: To see one specific saved value, type: recall <key>"
+
+    if command.startswith("explain "):
+        topic = original[8:].strip()
+        return explain_topic(topic)
+
+    # Threat Detection
+    if command == "set baseline":
+        return set_baseline()
+
+    if command == "threat scan":
+        return scan_for_threats()
 
     # Memory
     if command.startswith("remember "):

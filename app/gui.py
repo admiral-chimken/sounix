@@ -1107,6 +1107,18 @@ create_section(
         ("Tailscale", "tailscale status"),
         ("Network Scan", "network scan"),
         ("Check Updates", "check updates"),
+        ("Predictive Analytics", "predictive analytics"),
+        ("Set Baseline", "set baseline"),
+        ("Scan for Threats", "threat scan"),
+    ],
+)
+
+create_section(
+    dashboard_container,
+    "PASSWORDS",
+    [
+        ("List Saved Items", "list saved items"),
+        ("How to Reveal", "help reveal"),
     ],
 )
 
