@@ -14,6 +14,10 @@ from network_scan import network_scan
 from predictive_analytics import run_predictive_analytics
 from education import explain_topic
 from threat_detection import set_baseline, scan_for_threats
+from mfa_checklist import track_account, mark_mfa_enabled, mfa_status
+from adblock import enable_blocklist, disable_blocklist, blocklist_status
+from security_news import security_news_report
+from security_news import security_news_report
 from power_control import (
     shutdown_computer,
     restart_computer,
@@ -195,6 +199,36 @@ def respond(message):
 
     if command == "threat scan":
         return scan_for_threats()
+
+    # MFA Checklist
+    if command.startswith("track account "):
+        name = original[14:].strip()
+        return track_account(name)
+
+    if command.startswith("mfa enabled "):
+        name = original[12:].strip()
+        return mark_mfa_enabled(name)
+
+    if command == "mfa status":
+        return mfa_status()
+
+    # Ad/Malware Blocklist
+    if command == "enable blocklist":
+        return enable_blocklist()
+
+    if command == "disable blocklist":
+        return disable_blocklist()
+
+    if command == "blocklist status":
+        return blocklist_status()
+
+    # Security News
+    if command == "security news":
+        return security_news_report()
+
+    # Security News
+    if command == "security news":
+        return security_news_report()
 
     # Memory
     if command.startswith("remember "):
@@ -429,6 +463,8 @@ def respond(message):
             "• Improved Arch Linux support\n"
             "• Improved Kali Linux compatibility\n"
             "• Updated installer\n\n"
+            " improved security\n"
+            " olllama qwen2.5:1.5b\n" 
             "Coming Soon:\n"
             "• Voice interaction\n"
             "• Better natural language understanding\n"
@@ -450,8 +486,12 @@ def respond(message):
             "tailscale status\n"
             "network scan\n"
             "scan <path>\n"
-        )
-
+            "track account <website>\n"
+            "threat scan\n"
+            "set baseline\n"
+            "predictive analytics\n"
+            "mfa enable/status\n"
+         )
     if command == "help files":
         return (
             "========== FILE HELP ==========\n\n"
@@ -508,6 +548,7 @@ def respond(message):
             "google <search>\n"
             "calculate <expression>\n"
         )
+
                      
     # Help
     if command in {"help", "commands", "what can you do"}:

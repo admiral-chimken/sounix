@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import scrolledtext, ttk
 
 from ai import respond
+from auth import check_pin
 from file_manager import (
     copy_file,
     delete_file,
@@ -787,6 +788,8 @@ def create_section(parent, title, buttons):
 # MAIN WINDOW
 # =========================================================
 
+check_pin()
+
 root = tk.Tk()
 
 root.title(
@@ -1110,6 +1113,13 @@ create_section(
         ("Predictive Analytics", "predictive analytics"),
         ("Set Baseline", "set baseline"),
         ("Scan for Threats", "threat scan"),
+        ("MFA Status", "mfa status"),
+        ("Enable Blocklist", "enable blocklist"),
+        ("Disable Blocklist", "disable blocklist"),
+        ("Blocklist Status", "blocklist status"),
+        ("Enable Blocklist", "enable blocklist"),
+        ("Disable Blocklist", "disable blocklist"),
+        ("Blocklist Status", "blocklist status"),
     ],
 )
 
@@ -1141,6 +1151,7 @@ create_section(
         ("Help", "help"),
         ("About", "about"),
         ("News", "news"),
+        ("Security News", "security news"),
         ("Version", "version"),
     ],
 )
