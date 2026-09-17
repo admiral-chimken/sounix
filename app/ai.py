@@ -17,6 +17,12 @@ from threat_detection import set_baseline, scan_for_threats
 from mfa_checklist import track_account, mark_mfa_enabled, mfa_status
 from adblock import enable_blocklist, disable_blocklist, blocklist_status
 from security_news import security_news_report
+from preferences import (
+    set_preferred_model, show_model_status,
+    toggle_feature, show_feature_status,
+    set_sensitivity, get_sensitivity,
+    set_background_image,
+)
 from security_news import security_news_report
 from power_control import (
     shutdown_computer,
@@ -226,9 +232,31 @@ def respond(message):
     if command == "security news":
         return security_news_report()
 
-    # Security News
-    if command == "security news":
-        return security_news_report()
+    # Preferences / Customization
+    if command.startswith("set model "):
+        model_name = original[10:].strip()
+        return set_preferred_model(model_name)
+
+    if command == "model status":
+        return show_model_status()
+
+    if command.startswith("toggle feature "):
+        feature_name = original[15:].strip()
+        return toggle_feature(feature_name)
+
+    if command == "feature status":
+        return show_feature_status()
+
+    if command.startswith("set sensitivity "):
+        level = original[16:].strip()
+        return set_sensitivity(level)
+
+    if command == "sensitivity status":
+        return f"Sounix: Threat Detection sensitivity is set to {get_sensitivity()}."
+
+    if command.startswith("set background "):
+        path = original[15:].strip()
+        return set_background_image(path)
 
     # Memory
     if command.startswith("remember "):
@@ -491,6 +519,13 @@ def respond(message):
             "set baseline\n"
             "predictive analytics\n"
             "mfa enable/status\n"
+            "explain <topic>\n"
+            "security news\n"
+            "enable blocklist / disable blocklist / blocklist status\n"
+            "set model <name> / model status\n"
+            "toggle feature <name> / feature status\n"
+            "set sensitivity low|normal|high / sensitivity status\n"
+            "set background <path>\n"
          )
     if command == "help files":
         return (

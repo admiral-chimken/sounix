@@ -23,15 +23,15 @@ def get_package_manager():
 
 
 def settings_report():
-    return( 
-          "========== SOUNIX SETTINGS ==========\n"
-          f"versioon: (sounix_version)\n"
-          f"system: (platform.system())\n"
-          f"machine: (platform.machine())\n"
-          f"distro: (get-distro())\n" 
-          f"package manager(get_package_manager())\n"
-          "\n"
-          f"firewall:\n(firewall_status())\n"
-          f"{get_os_details()}\n"
-           "====================================="
+    return (
+        "========== SOUNIX SETTINGS ==========\n"
+        f"Version: {sounix_version}\n"
+        f"System: {platform.system()}\n"
+        f"Machine: {platform.machine()}\n"
+        f"Distro: {get_distro()}\n"
+        f"Package Manager: {get_package_manager()}\n"
+        "\n"
+        f"Firewall:\n{firewall_status()}\n"
+        f"{get_os_details()}\n"
+        "====================================="
     )         

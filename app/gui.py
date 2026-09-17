@@ -4,6 +4,8 @@ from tkinter import scrolledtext, ttk
 
 from ai import respond
 from auth import check_pin
+from tkinter import filedialog
+from preferences import set_background_image
 from file_manager import (
     copy_file,
     delete_file,
@@ -144,6 +146,21 @@ def write_output(text):
     output_box.insert(tk.END, str(text))
     output_box.see(tk.END)
     output_box.configure(state="disabled")
+
+
+def _choose_background_image():
+    file_path = filedialog.askopenfilename(
+        title="Choose a background image",
+        filetypes=[
+            ("Image files", "*.jpg *.jpeg *.png *.gif *.bmp"),
+            ("All files", "*.*"),
+        ],
+    )
+    if not file_path:
+        return  # user cancelled
+
+    result = set_background_image(file_path)
+    write_output(result)
 
 
 def clear_output():
@@ -825,6 +842,23 @@ root.configure(
     background=BACKGROUND,
 )
 
+# =========================================================
+# BACKGROUND IMAGE
+# =========================================================
+from PIL import Image, ImageTk
+
+try:
+    _bg_image_raw = Image.open("app/assets/background.jpg")
+    _bg_image_resized = _bg_image_raw.resize((window_width, window_height))
+    _bg_photo = ImageTk.PhotoImage(_bg_image_resized)
+
+    background_label = tk.Label(root, image=_bg_photo)
+    background_label.image = _bg_photo  # keep a reference so it isn't garbage collected
+    background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    background_label.lower()  # send it behind everything else
+except Exception as e:
+    print(f"Sounix: Could not load background image: {e}")
+
 configure_theme()
 
 root.grid_columnconfigure(
@@ -1094,6 +1128,18 @@ create_section(
     ],
 )
 
+background_button_frame = ttk.Frame(
+    dashboard_container,
+    style="Panel.TFrame",
+)
+background_button_frame.pack(fill="x", pady=1)
+
+ttk.Button(
+    background_button_frame,
+    text="Choose Background Image",
+    command=_choose_background_image,
+).pack(fill="x", padx=10, pady=4)
+
 create_section(
     dashboard_container,
     "SECURITY",
@@ -1152,6 +1198,9 @@ create_section(
         ("About", "about"),
         ("News", "news"),
         ("Security News", "security news"),
+        ("Model Status", "model status"),
+        ("Feature Status", "feature status"),
+        ("Sensitivity Status", "sensitivity status"),
         ("Version", "version"),
     ],
 )
@@ -1203,6 +1252,38 @@ output_box.grid(
     padx=8,
     pady=8,
 )
+
+# =========================================================
+# KEYBOARD SHORTCUTS: text color + clear
+# =========================================================
+
+def _set_output_text_color(color):
+    output_box.configure(foreground=color)
+
+root.bind("<Control-r>", lambda e: _set_output_text_color("red"))
+root.bind("<Control-g>", lambda e: _set_output_text_color("green"))
+root.bind("<Control-b>", lambda e: _set_output_text_color("blue"))
+root.bind("<Control-y>", lambda e: _set_output_text_color("yellow"))
+root.bind("<Control-p>", lambda e: _set_output_text_color("violet"))
+root.bind("<Control-w>", lambda e: _set_output_text_color("white"))
+
+def _clear_output_box(event=None):
+    output_box.configure(state="normal")
+    output_box.delete("1.0", tk.END)
+    output_box.configure(state="disabled")
+
+root.bind("<Control-BackSpace>", _clear_output_box)
+
+_output_panel_visible = [True]  # list so it's mutable inside the closure
+
+def _toggle_output_panel(event=None):
+    if _output_panel_visible[0]:
+        output_frame.grid_remove()
+        _output_panel_visible[0] = False
+    else:
+        output_frame.grid()
+        _output_panel_visible[0] = True
+    return "break"  # stop the Entry widget's default word-delete behavior
 
 output_box.configure(
     state="disabled",
@@ -1274,6 +1355,11 @@ clear_button.grid(
 command_entry.bind(
     "<Return>",
     lambda event: run_command(),
+)
+
+command_entry.bind(
+    "<Control-BackSpace>",
+    _toggle_output_panel,
 )
 
 
