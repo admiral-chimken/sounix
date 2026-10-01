@@ -3,3 +3,5 @@ psutil
 deep-translator
 numpy
 faster-whisper
+numpy
+faster-whisper
