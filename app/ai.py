@@ -45,6 +45,7 @@ from tailscale import tailscale_status
 from updater import check_updates, update_sounix
 import getpass
 from plugin_loader import load_plugins
+from ai_control import model_command, voice_command, smart_ask
 pending_action = None
 
 plugins = load_plugins()
@@ -91,6 +92,15 @@ def respond(message):
             return "Sounix: Action cancelled."
 
         return "Sounix: Please answer yes or no."
+
+    # Voice and model selection (ai_control.py)
+    reply = model_command(command, original)
+    if reply is not None:
+        return reply
+
+    reply = voice_command(command, original, respond)
+    if reply is not None:
+        return reply
 
     # Basic conversation
     if command in {"hello", "hi", "hey"}:
@@ -652,6 +662,17 @@ def respond(message):
             "  help network\n"
             "  help assistant\n"
             "\n"
+            "Voice:\n"
+            "  voice on / voice off / voice status\n"
+            "  help voice\n"
+            "\n"
+            "Models:\n"
+            "  models\n"
+            "  use model <name>\n"
+            "  use fast model / use deep model\n"
+            "  automatic model / default model\n"
+            "  help models\n"
+            "\n"
             "Updates:\n"
             "  check updates\n"
             "  update sounix\n"
@@ -689,7 +710,7 @@ def respond(message):
             arguments = original[len(plugin_command):].strip()
             return plugin_run(arguments)
 
-    return ask_ollama(message)
+    return smart_ask(message, ask_ollama)
 
 
 

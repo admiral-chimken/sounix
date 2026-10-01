@@ -16,3 +16,7 @@ sounix_memory.json
 app/sounix_memory.json
 *.pyc
 __pycache__/
+venv/
+__pycache__/
+*.bak
+sounix_memory.json

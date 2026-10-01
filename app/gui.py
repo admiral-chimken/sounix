@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import scrolledtext, ttk
 
 from ai import respond
+import ai_control
 from auth import check_pin
 from tkinter import filedialog
 from preferences import set_background_image
@@ -1199,6 +1200,8 @@ create_section(
         ("News", "news"),
         ("Security News", "security news"),
         ("Model Status", "model status"),
+        ("Models", "models"),
+        ("Voice Help", "help voice"),
         ("Feature Status", "feature status"),
         ("Sensitivity Status", "sensitivity status"),
         ("Version", "version"),
@@ -1361,6 +1364,69 @@ command_entry.bind(
     "<Control-BackSpace>",
     _toggle_output_panel,
 )
+
+
+# =========================================================
+# VOICE BUTTON
+# =========================================================
+
+def _voice_to_window(text):
+    root.after(0, lambda: write_output(f"{text}\n\n"))
+
+
+ai_control.voice_output = _voice_to_window
+
+
+def toggle_voice():
+    command = "voice off" if ai_control._voice["running"] else "voice on"
+    write_output(f"You: {command}\n")
+    set_busy(True)
+    threading.Thread(
+        target=process_command,
+        args=(command,),
+        daemon=True,
+    ).start()
+
+
+voice_button = ttk.Button(
+    command_frame,
+    text="● Voice Off",
+    command=toggle_voice,
+)
+
+voice_button.grid(
+    row=0,
+    column=3,
+    padx=(8, 0),
+)
+
+
+def refresh_voice_button():
+    state = ai_control._voice
+    listener = state["listener"]
+
+    if not state["running"]:
+        text, style_name = "● Voice Off", "TButton"
+    elif listener is None:
+        text, style_name = "● Voice Starting…", "TButton"
+    elif listener.active:
+        text, style_name = "● Listening…", "Danger.TButton"
+    else:
+        text, style_name = "● Voice Ready", "TButton"
+
+    voice_button.configure(text=text, style=style_name)
+    root.after(500, refresh_voice_button)
+
+
+def on_close():
+    listener = ai_control._voice["listener"]
+    if listener is not None:
+        listener.stop()
+    root.destroy()
+
+
+root.protocol("WM_DELETE_WINDOW", on_close)
+refresh_voice_button()
 
 
 # =========================================================
