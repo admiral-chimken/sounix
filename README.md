@@ -24,10 +24,10 @@ Sounix is under active development. Some planned features are not available yet.
 - Settings dashboard
 - Graphical interface
 - Update checker
-
+  voice commands
 # Planned Features
 
-- Voice commands
+
 - Smarter AI responses
 - Maps and location tools
 - Improved cross-platform support
@@ -41,7 +41,8 @@ Sounix is under active development. Some planned features are not available yet.
 # Installation
 
 ## Requirements
-
+- windows
+- mac
 - Linux
 - Python 3
 - Git
