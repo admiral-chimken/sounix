@@ -4,8 +4,8 @@ import shutil
 import subprocess
 
 
-PACKAGE_PATTERN = re.compile(r"^[a-zA-Z0-9@._+-]+$")
-SEARCH_PATTERN = re.compile(r"^[a-zA-Z0-9@._+\- ]+$")
+PACKAGE_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9@._+-]*$")  # must not start with "-"
+SEARCH_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9@._+\- ]*$")  # must not start with "-"
 
 
 def valid_package_name(package):

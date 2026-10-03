@@ -5,13 +5,42 @@ a model or voice command; "default model" returns to your old ask_ollama path.
 """
 from __future__ import annotations
 
+import json
 import re
 import threading
+from pathlib import Path
 
 from models import TASKS, ModelRouter, OllamaError
 
 router = ModelRouter()
-_enabled = router.pinned is not None      # a saved pin means "use the router"
+SETTINGS_PATH = Path.home() / ".sounix" / "settings.json"
+_VOICE_KEYS = {"wake_phrase": str, "silent_threshold": int, "source": str, "capture": str}
+
+
+def _load_settings() -> dict:
+    try:
+        data = json.loads(SETTINGS_PATH.read_text())
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+_saved = _load_settings()
+_enabled = bool(_saved.get("routing_enabled", router.pinned is not None))
+
+
+def _save_settings() -> None:
+    try:
+        SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SETTINGS_PATH.write_text(json.dumps({"routing_enabled": _enabled, "voice": _opts}, indent=2))
+    except OSError:
+        pass
+
+
+def _set_enabled(value: bool) -> None:
+    global _enabled
+    _enabled = value
+    _save_settings()
 voice_output = print                      # GUI: ai_control.voice_output = your_function
 _history: list[dict] = []
 SYSTEM = ("You are Sounix, a cybersecurity-focused assistant for Linux. "
@@ -38,6 +67,7 @@ voice on / voice off / voice status
 voice wake <phrase>         change the wake phrase (default: hey sounix)
 voice threshold <number>    mic sensitivity, lower = more sensitive (default 750)
 voice source <name or id>   choose a PipeWire mic ("voice source default" to reset)
+voice reset                forget saved voice settings
 
 Say the wake phrase, then a command. Say "end sounix" to stop listening.
 For safety, risky commands (shutdown, delete, install, firewall changes,
@@ -68,20 +98,20 @@ def model_command(command: str, original: str):
             tier = command.split()[1]
             m = router.use_tier(tier)
             router.save()
-            _enabled = True
+            _set_enabled(True)
             return f"Sounix: Using {m.name} ({tier})."
         if command == "use model":
             return "Sounix: Use: use model <name>   (type 'models' to see them)"
         if command.startswith("use model "):
             m = router.use(command[10:].strip(), persist=True)
-            _enabled = True
+            _set_enabled(True)
             return f"Sounix: Using {m.name}."
         if command in {"automatic model", "auto model"}:
             router.use(None, persist=True)
-            _enabled = True
+            _set_enabled(True)
             return "Sounix: Automatic model selection is on."
         if command == "default model":
-            _enabled = False
+            _set_enabled(False)
             return "Sounix: Back to your default model setup."
         if command.startswith("task model "):
             parts = command[11:].split(maxsplit=1)
@@ -125,7 +155,9 @@ def smart_ask(message: str, fallback):
 _BLOCKED = ("yes", "y", "shutdown", "restart", "delete", "install", "enable firewall",
             "disable firewall", "update sounix", "move", "rename", "copy",
             "make folder", "remember", "forget")
-_opts: dict = {}
+_saved_voice = _saved.get("voice") if isinstance(_saved.get("voice"), dict) else {}
+_opts: dict = {k: v for k, v in _saved_voice.items()
+               if k in _VOICE_KEYS and isinstance(v, _VOICE_KEYS[k])}
 _voice = {"listener": None, "running": False}
 
 
@@ -173,6 +205,10 @@ def voice_command(command: str, original: str, respond):
         if _voice["listener"] is not None:
             _voice["listener"].stop()
         return "Sounix: Voice stopping."
+    if command == "voice reset":
+        _opts.clear()
+        _save_settings()
+        return "Sounix: Saved voice settings cleared. Turn voice off and on to apply."
     if command == "voice status":
         lis = _voice["listener"]
         if not _voice["running"]:
@@ -196,6 +232,7 @@ def voice_command(command: str, original: str, respond):
             if field == "source" and value.lower() in {"default", "auto", "none"}:
                 value = ""
             _opts[field] = value
+            _save_settings()
             if _voice["listener"] is not None:
                 setattr(_voice["listener"].cfg, field, value)
             if field in {"source", "capture"}:
