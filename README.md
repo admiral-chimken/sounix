@@ -24,7 +24,7 @@ Sounix is under active development. Some planned features are not available yet.
 - Settings dashboard
 - Graphical interface
 - Update checker
-  voice commands
+- voice commands 
 # Planned Features
 
 
@@ -41,9 +41,9 @@ Sounix is under active development. Some planned features are not available yet.
 # Installation
 
 ## Requirements
-- windows
-- mac
+- Windows
 - Linux
+- MAC
 - Python 3
 - Git
 
