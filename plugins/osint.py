@@ -5,6 +5,10 @@
   osint own <domain> [confirm]   register a domain/server you own (needed before scanning)
   osint own list | osint own remove <domain>
   osint scan <domain> [confirm]  quick top-100 port check of a REGISTERED domain
+  osint deep <domain>            like osint <domain>, plus amass (slow, passive)
+  osint harvest <domain>         public emails/hosts via theHarvester (REGISTERED domains only)
+  osint tools                    which helper tools are installed
+  osint maltego                  open Maltego
   osint help
 
 Passive only (for 'osint <domain>'): public DNS and public certificate-transparency records. Nothing is sent to the
@@ -15,6 +19,7 @@ import json
 import re
 import shutil
 import subprocess
+import tempfile
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
@@ -42,6 +47,13 @@ HELP = (
     "  - registration and expiry dates, if installed:  sudo apt install whois\n\n"
     "Passive only: nothing is sent to the target's servers and nothing is scanned.\n"
     "Use it on domains you own or have permission to assess. Domains only, never people.\n\n"
+    "HELPER TOOLS (all optional, detected automatically; passive sources only):\n"
+    "  osint tools                   which are installed and how to get the rest\n"
+    "  osint <domain>                also uses subfinder if installed\n"
+    "  osint deep <domain>           adds amass (passive), slower\n"
+    "  osint harvest <domain>        emails and hosts from public sources (theHarvester),\n"
+    "                                only for domains you registered with 'osint own'\n"
+    "  osint maltego                 opens Maltego for visual investigations\n\n"
     "PORT CHECK (active, so it is locked down):\n"
     "  osint own <domain>            say you own it; then add the word 'confirm' to save it\n"
     "  osint own list | osint own remove <domain>\n"
@@ -192,6 +204,134 @@ def _findings(domain, records, spf, dmarc, ds, subs_live, subs_dead, whois):
                       f"{len(subs_dead)} name(s) appear in certificate logs but no longer resolve.",
                       "Usually harmless history. Make sure none of them point at services you've shut down."))
     return found
+
+
+# ---- optional helper tools -----------------------------------------------
+TOOLS = [
+    ("whois", ("whois",), "registrar and expiry dates", "whois"),
+    ("subfinder", ("subfinder",), "more subdomains from passive sources", "subfinder"),
+    ("amass", ("amass",), "deeper passive subdomain search (osint deep)", "amass"),
+    ("theHarvester", ("theHarvester", "theharvester"), "public emails and hosts (osint harvest)", "theharvester"),
+    ("maltego", ("maltego",), "visual investigations (osint maltego)", "maltego"),
+    ("dig", ("dig",), "DNS lookups (required)", "dnsutils"),
+    ("nmap", ("nmap",), "port check on your own domains", "nmap"),
+]
+
+
+def _tool(*names):
+    for name in names:
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def _run_tool(command, timeout, cwd=None):
+    """Returns (output text, error text)."""
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, cwd=cwd)
+    except subprocess.TimeoutExpired:
+        return "", "timed out"
+    except OSError as error:
+        return "", str(error)
+    return result.stdout, result.stderr.strip()
+
+
+def _names_in(text, domain):
+    found = set()
+    for token in re.findall(r"[A-Za-z0-9._-]+", text):
+        name = token.lower().strip(".-_")
+        if (name == domain or name.endswith("." + domain)) and DOMAIN_RE.fullmatch(name):
+            found.add(name)
+    return found
+
+
+def _tool_subdomains(domain, deep):
+    """Subdomains from optional tools: {tool name: set of names}. Passive sources only."""
+    found = {}
+    sub = _tool("subfinder")
+    if sub:
+        out, _ = _run_tool([sub, "-d", domain, "-silent", "-timeout", "30", "-max-time", "2"], 180)
+        found["subfinder"] = _names_in(out, domain)
+    if deep:
+        amass = _tool("amass")
+        if amass:
+            out, _ = _run_tool([amass, "enum", "-passive", "-d", domain, "-timeout", "3"], 260)
+            found["amass"] = _names_in(out, domain)
+    return found
+
+
+def _mask(address):
+    local, _, host = address.partition("@")
+    return f"{local[:2]}***@{host}"
+
+
+def _harvest_command(parts):
+    if len(parts) != 1:
+        return "Sounix: Use: osint harvest <domain>     (only for domains you registered with: osint own)"
+    domain = _clean_domain(parts[0])
+    if not domain:
+        return "Sounix: Only domain names are supported, like example.com."
+    if not _is_owned(domain, _load_owned()):
+        return (f"Sounix: {domain} is not registered as yours. Email harvesting is limited to your own domains,\n"
+                f"because it lists people's addresses. If it's yours: osint own {domain}")
+    harvester = _tool("theHarvester", "theharvester")
+    if not harvester:
+        return "Sounix: theHarvester is not installed. Run: sudo apt install theharvester"
+    with tempfile.TemporaryDirectory() as tmp:
+        out, err = _run_tool([harvester, "-d", domain, "-b", "crtsh,rapiddns,otx,urlscan,certspotter",
+                              "-f", "report"], 300, cwd=tmp)
+        text = out
+        for path in Path(tmp).glob("*"):
+            try:
+                text += "\n" + path.read_text(errors="replace")
+            except OSError:
+                pass
+    emails = sorted(set(re.findall(rf"[A-Za-z0-9._%+-]+@(?:[a-z0-9-]+\.)*{re.escape(domain)}", text, re.I)))
+    hosts = sorted(_names_in(text, domain))
+    if not text.strip() and err:
+        return f"Sounix: theHarvester did not produce results ({err[:200]})."
+    L = [f"========== HARVEST: {domain} ==========", "",
+         "Passive public sources only. Addresses are partly hidden here on purpose.", "",
+         f"Email addresses found: {len(emails)}"]
+    L += [f"  {_mask(e.lower())}" for e in emails[:20]]
+    if len(emails) > 20:
+        L.append(f"  ... and {len(emails) - 20} more")
+    L += ["", f"Hosts found: {len(hosts)}"] + [f"  {h}" for h in hosts[:30]]
+    if len(hosts) > 30:
+        L.append(f"  ... and {len(hosts) - 30} more")
+    if emails:
+        L += ["", "[CHECK] These addresses are publicly findable, so expect them to get spam and phishing.",
+              "  Fix: use SPF, DKIM and DMARC (try: osint " + domain + "), train staff on phishing, and avoid",
+              "  publishing personal addresses on websites; use role addresses like contact@ instead."]
+    else:
+        L += ["", "No addresses surfaced from these sources."]
+    return "\n".join(L)
+
+
+def _tools_command():
+    L = ["========== OSINT TOOLS ==========", ""]
+    missing = []
+    for label, names, purpose, package in TOOLS:
+        path = _tool(*names)
+        L.append(f"  {label:<13} {'installed' if path else 'not installed':<14} {purpose}")
+        if not path:
+            missing.append(package)
+    if missing:
+        L += ["", "Install the missing ones with:", "  sudo apt install " + " ".join(missing)]
+    L += ["", "Everything here is optional. Sounix uses whatever is installed."]
+    return "\n".join(L)
+
+
+def _maltego_command():
+    path = _tool("maltego")
+    if not path:
+        return "Sounix: Maltego was not found on the PATH. Open it from the Kali menu, or: sudo apt install maltego"
+    try:
+        subprocess.Popen([path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    except OSError as error:
+        return f"Sounix: Could not start Maltego: {error}"
+    return "Sounix: Opening Maltego. It runs on its own, and its first start can take a minute."
 
 
 # ---- registered targets and the port check -----------------------------
@@ -347,11 +487,19 @@ def run(args):
     parts = args.split()
     if not parts or parts[0].lower() == "help":
         return HELP
-    if parts[0].lower() == "own":
+    word = parts[0].lower()
+    if word == "own":
         return _own_command(parts[1:])
-    if parts[0].lower() == "scan":
+    if word == "scan":
         return _scan_command(parts[1:])
-    if parts[0].lower() in {"domain", "recon"} and len(parts) == 2:
+    if word == "harvest":
+        return _harvest_command(parts[1:])
+    if word == "tools" and len(parts) == 1:
+        return _tools_command()
+    if word == "maltego" and len(parts) == 1:
+        return _maltego_command()
+    deep = word == "deep"
+    if deep or (word in {"domain", "recon"} and len(parts) == 2):
         parts = parts[1:]
     if len(parts) != 1:
         return "Sounix: Use: osint <domain>     (example: osint example.com)   -- osint help"
@@ -361,7 +509,10 @@ def run(args):
                 "Only domains are supported, not IP addresses, people or usernames.")
     if not shutil.which("dig"):
         return "Sounix: dig is not installed. Run: sudo apt install dnsutils"
+    return _report(domain, deep)
 
+
+def _report(domain, deep):
     records = {rtype: _dig(domain, rtype) for rtype in ("A", "AAAA", "MX", "NS", "CAA")}
     if all(value is None for value in records.values()):
         return "Sounix: DNS lookups timed out. Check your internet connection."
@@ -373,6 +524,10 @@ def run(args):
     ds = [] if ds is None else ds
 
     subs, sub_error = _subdomains(domain)
+    sources = {"crt.sh": len(subs)}
+    for tool_name, names in _tool_subdomains(domain, deep).items():
+        sources[tool_name] = len(names)
+        subs = sorted(set(subs) | names)
     resolved = _resolve_many(subs[:MAX_RESOLVE]) if subs else {}
     live = sorted(n for n, ips in resolved.items() if ips)
     dead = sorted(n for n, ips in resolved.items() if not ips)
@@ -393,7 +548,9 @@ def run(args):
         L += ["", "Registration: skipped (optional: sudo apt install whois)"]
     elif whois:
         L += ["", "Registration:"] + [f"  {k.capitalize():<9} {v}" for k, v in whois.items()]
-    L += ["", f"Subdomains seen in certificate logs: {len(subs)}" + (f"  (checked the first {MAX_RESOLVE})" if len(subs) > MAX_RESOLVE else "")]
+    L += ["", f"Subdomains found: {len(subs)}" + (f"  (checked the first {MAX_RESOLVE})" if len(subs) > MAX_RESOLVE else ""),
+          "  sources: " + ", ".join(f"{name} {count}" for name, count in sources.items())
+          + ("" if "subfinder" in sources else "   (more with: sudo apt install subfinder)")]
     if sub_error:
         L.append(f"  {sub_error}")
     for name in live[:30]:
